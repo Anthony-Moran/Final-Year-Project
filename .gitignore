@@ -1,2 +1,5 @@
 .DS_Store
-Rubbish/
+Final Report/*.txt
+*.log
+*.aux
+*.toc
