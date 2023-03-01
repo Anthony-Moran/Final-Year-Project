@@ -3,3 +3,5 @@ Final Report/*.txt
 *.log
 *.aux
 *.toc
+*.synctex.gz
+/*.pdf
