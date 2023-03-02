@@ -5,3 +5,4 @@ Final Report/*.txt
 *.toc
 *.synctex.gz
 /*.pdf
+/code/.idea
