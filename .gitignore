@@ -6,3 +6,4 @@ Final Report/*.txt
 *.synctex.gz
 /*.pdf
 /code/.idea
+*.pyc

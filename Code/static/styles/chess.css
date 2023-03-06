@@ -1,5 +1,22 @@
 * {
     text-align: center;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+html {
+    margin: auto;
+    width: 100vmin;
+    height: 100vmin;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+body {
+    width: 90%;
+    height: 90%;
 }
 
 canvas {
