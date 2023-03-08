@@ -28,6 +28,13 @@ var Colours;
     Colours[Colours["White"] = 0] = "White";
     Colours[Colours["Black"] = 1] = "Black";
 })(Colours || (Colours = {}));
+var states;
+(function (states) {
+    states[states["WhiteLost"] = 0] = "WhiteLost";
+    states[states["BlackLost"] = 1] = "BlackLost";
+    states[states["Stalemate"] = 2] = "Stalemate";
+    states[states["Continue"] = 3] = "Continue";
+})(states || (states = {}));
 var Piece = /** @class */ (function () {
     function Piece(colour, type) {
         this.colour = colour;
@@ -36,7 +43,7 @@ var Piece = /** @class */ (function () {
         this.sy = this.colour * Piece.HEIGHT;
     }
     Piece.prototype.draw = function (x, y) {
-        ctx.drawImage(Piece.SPRITE_SHEET, this.sx, this.sy, Piece.WIDTH, Piece.HEIGHT, x, y, Square.WIDTH, Square.HEIGHT);
+        ctx.drawImage(Piece.SPRITE_SHEET, this.sx, this.sy, Piece.WIDTH, Piece.HEIGHT, x, y, Square.getWidth(), Square.getHeight());
     };
     Piece.SPRITE_SHEET = document.querySelector("#ImagePieces");
     return Piece;
@@ -53,9 +60,7 @@ var Pawn = /** @class */ (function (_super) {
     return Pawn;
 }(Piece));
 var Square = /** @class */ (function () {
-    function Square(x, y, colour) {
-        this.x = x;
-        this.y = y;
+    function Square(colour) {
         this.colour = colour;
         this.piece = null;
         this.selected = false;
@@ -71,14 +76,18 @@ var Square = /** @class */ (function () {
         else {
             ctx.fillStyle = this.colour;
         }
-        ctx.fillRect(this.getX(), this.getY(), Square.WIDTH, Square.HEIGHT);
+        ctx.fillRect(this.getX(), this.getY(), Square.getWidth(), Square.getHeight());
         if (this.piece == null) {
             return;
         }
-        this.piece.draw(this.x, this.y);
+        this.piece.draw(this.getX(), this.getY());
     };
-    Square.prototype.getX = function () { return this.x; };
-    Square.prototype.getY = function () { return this.y; };
+    Square.prototype.getX = function () { return Square.getWidth() * (Board.indexOf(this) % COLS); };
+    Square.prototype.getY = function () { return Square.getHeight() * Math.floor(Board.indexOf(this) / ROWS); };
+    Square.getWidth = function () { return Square.WIDTH; };
+    Square.getHeight = function () { return Square.HEIGHT; };
+    Square.setWidth = function (width) { Square.WIDTH = width; };
+    Square.setHeight = function (height) { Square.HEIGHT = height; };
     Square.prototype.setPiece = function (piece) { this.piece = piece; };
     Square.prototype.select = function () {
         if (this.piece == null) {
@@ -89,7 +98,7 @@ var Square = /** @class */ (function () {
         }
         this.selected = true;
         SelectedSquare = this;
-        fetch("http://127.0.0.1:8000/chess?index=".concat(Board.indexOf(this)))
+        fetch("http://192.168.0.169:8000/chess?index=".concat(Board.indexOf(this)))
             .then(function (response) { return response.json(); })
             .then(function (json) {
             highlightSquares(json);
@@ -114,9 +123,9 @@ var Square = /** @class */ (function () {
             return;
         }
         var queryParams = "index=".concat(Board.indexOf(SelectedSquare), "&indexMove=").concat(Board.indexOf(moveSquare));
-        fetch("http://127.0.0.1:8000/chess?".concat(queryParams))
+        fetch("http://192.168.0.169:8000/chess?".concat(queryParams))
             .then(function (response) { return response.json(); })
-            .then(function (json) { })
+            .then(function (json) { return updatePrompt(json); })
             .catch(function (error) { return console.log(error); });
         moveSquare.piece = this.piece;
         this.piece = null;
@@ -126,6 +135,14 @@ var Square = /** @class */ (function () {
     };
     return Square;
 }());
+function updateCanvas() {
+    var vmin = Math.min(canvasParent.clientWidth, canvasParent.clientHeight);
+    canvas.width = vmin;
+    canvas.height = vmin;
+    Square.setWidth(vmin / COLS);
+    Square.setHeight(vmin / ROWS);
+    drawBoard();
+}
 function drawBoard() {
     Board.forEach(function (square) {
         square.draw();
@@ -136,18 +153,17 @@ var COLS = 8;
 var canvas = document.querySelector("#board");
 var canvasParent = canvas.parentElement;
 var ctx = canvas.getContext("2d");
+var promptElement = document.querySelector("#Prompt");
 var Board = [];
+var turn = Colours.White;
 var SelectedSquare = null;
 var HighlightedSquares = [];
-var vmin = Math.min(canvasParent.offsetWidth, canvasParent.offsetHeight);
-Square.WIDTH = vmin / COLS;
-Square.HEIGHT = vmin / ROWS;
-canvas.width = Square.WIDTH * COLS;
-canvas.height = Square.HEIGHT * ROWS;
+updateCanvas();
+window.addEventListener('resize', updateCanvas);
 // Initialise Squares
 for (var i = 0; i < ROWS; i++) {
     for (var j = 0; j < COLS; j++) {
-        Board.push(new Square(j * Square.WIDTH, i * Square.HEIGHT, (i + j) % 2 == 0 ? "#ffffff" : "#22aa44"));
+        Board.push(new Square((i + j) % 2 == 0 ? "#ffffff" : "#22aa44"));
     }
 }
 function onSpriteSheetLoad() {
@@ -208,10 +224,39 @@ function highlightSquares(positions) {
         Board[index].highlight();
     });
 }
-Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
-canvas.addEventListener('mouseup', function (e) {
-    var x = Math.floor(e.offsetX / Square.WIDTH);
-    var y = Math.floor(e.offsetY / Square.HEIGHT);
+function updatePrompt(json) {
+    var prompt = "";
+    switch (json) {
+        case states.WhiteLost:
+            prompt = "Black Wins";
+            break;
+        case states.BlackLost:
+            prompt = "White Wins";
+            break;
+        case states.Stalemate:
+            prompt = "It's a Draw";
+            break;
+        case states.Continue:
+            switch (turn) {
+                case Colours.White:
+                    prompt = "Black's Turn";
+                    turn = Colours.Black;
+                    break;
+                case Colours.Black:
+                    prompt = "White's Turn";
+                    turn = Colours.White;
+                    break;
+            }
+            break;
+    }
+    promptElement.innerHTML = prompt;
+}
+function touchCanvas(e) {
+    var x = Math.floor(e.offsetX / Square.getWidth());
+    var y = Math.floor(e.offsetY / Square.getHeight());
     var index = y * COLS + x;
     selectSquare(index);
-});
+}
+Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+canvas.addEventListener('mouseup', function (e) { touchCanvas(e); });
+// canvas.addEventListener('touchend', e => {touchCanvas(e)})

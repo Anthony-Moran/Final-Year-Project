@@ -30,10 +30,12 @@ class Chess(Resource):
         ending_square = (indexMove // 8, indexMove % 8)
         state.move_piece(starting_square, ending_square, False)
 
+        return state.checkmate_stalemate_checker()
+
 
 def main():
     api.add_resource(Chess, "/chess")
-    app.run(host='127.0.0.1', port='8000', debug=True)
+    app.run(host='0.0.0.0', port='8000', debug=True)
 
 
 if __name__ == "__main__":

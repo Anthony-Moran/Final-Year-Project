@@ -13,6 +13,12 @@ enum Colours {
     Black
 }
 
+enum states {
+    WhiteLost,
+    BlackLost,
+    Stalemate,
+    Continue
+}
 
 class Piece {
     static SPRITE_SHEET = <HTMLImageElement> document.querySelector("#ImagePieces");
@@ -35,7 +41,7 @@ class Piece {
 
     draw(x, y) {
         ctx.drawImage(Piece.SPRITE_SHEET, this.sx, this.sy, Piece.WIDTH, Piece.HEIGHT,
-            x, y, Square.WIDTH, Square.HEIGHT);
+            x, y, Square.getWidth(), Square.getHeight());
     }
 }
 
@@ -48,11 +54,8 @@ class Pawn extends Piece {
 
 
 class Square {
-    static WIDTH;
-    static HEIGHT;
-
-    private readonly x: number;
-    private readonly y: number;
+    private static WIDTH;
+    private static HEIGHT;
 
     private readonly colour: string;
     private piece: Piece;
@@ -60,10 +63,7 @@ class Square {
     private selected: boolean;
     private highlighted: boolean;
 
-    constructor(x, y, colour) {
-        this.x = x;
-        this.y = y;
-
+    constructor(colour) {
         this.colour = colour;
         this.piece = null;
 
@@ -79,14 +79,20 @@ class Square {
         } else {
             ctx.fillStyle = this.colour;
         }
-        ctx.fillRect(this.getX(), this.getY(), Square.WIDTH, Square.HEIGHT);
+        ctx.fillRect(this.getX(), this.getY(), Square.getWidth(), Square.getHeight());
 
         if (this.piece == null) {return;}
-        this.piece.draw(this.x, this.y);
+        this.piece.draw(this.getX(), this.getY());
     }
 
-    getX() {return this.x;}
-    getY() {return this.y;}
+    getX() {return Square.getWidth() * (Board.indexOf(this) % COLS);}
+    getY() {return Square.getHeight() * Math.floor(Board.indexOf(this) / ROWS);}
+
+    static getWidth() {return Square.WIDTH;}
+    static getHeight() {return Square.HEIGHT;}
+    static setWidth(width: number) {Square.WIDTH = width;}
+    static setHeight(height: number) {Square.HEIGHT = height;}
+
     setPiece(piece: Piece) {this.piece = piece;}
 
     select() {
@@ -100,7 +106,7 @@ class Square {
         this.selected = true;
         SelectedSquare = this;
 
-        fetch(`http://127.0.0.1:8000/chess?index=${Board.indexOf(this)}`)
+        fetch(`http://192.168.0.169:8000/chess?index=${Board.indexOf(this)}`)
             .then(response => response.json())
             .then(json => {
                 highlightSquares(json)
@@ -126,10 +132,11 @@ class Square {
         if (this.piece == null) {return;}
 
         const queryParams = `index=${Board.indexOf(SelectedSquare)}&indexMove=${Board.indexOf(moveSquare)}`;
-        fetch(`http://127.0.0.1:8000/chess?${queryParams}`)
+        fetch(`http://192.168.0.169:8000/chess?${queryParams}`)
             .then(response => response.json())
-            .then(json => {})
+            .then(json => updatePrompt(json))
             .catch(error => console.log(error));
+
 
         moveSquare.piece = this.piece;
         this.piece = null;
@@ -139,6 +146,16 @@ class Square {
 
         drawBoard();
     }
+}
+
+function updateCanvas() {
+    const vmin = Math.min(canvasParent.clientWidth, canvasParent.clientHeight);
+    canvas.width = vmin;
+    canvas.height = vmin;
+
+    Square.setWidth(vmin / COLS);
+    Square.setHeight(vmin / ROWS);
+    drawBoard();
 }
 
 function drawBoard() {
@@ -153,22 +170,20 @@ const COLS = 8;
 const canvas = <HTMLCanvasElement> document.querySelector("#board");
 const canvasParent = canvas.parentElement;
 const ctx = canvas.getContext("2d");
+const promptElement = <HTMLHeadingElement> document.querySelector("#Prompt");
 
 const Board: Square[] = [];
+let turn = Colours.White;
 let SelectedSquare: Square = null;
 const HighlightedSquares: Square[] = [];
 
-const vmin = Math.min(canvasParent.offsetWidth, canvasParent.offsetHeight);
-Square.WIDTH = vmin / COLS;
-Square.HEIGHT = vmin / ROWS;
-canvas.width = Square.WIDTH * COLS;
-canvas.height = Square.HEIGHT * ROWS;
+updateCanvas();
+window.addEventListener('resize', updateCanvas);
 
 // Initialise Squares
 for (let i = 0; i < ROWS; i++) {
     for (let j = 0; j < COLS; j++) {
-        Board.push(new Square(j * Square.WIDTH, i * Square.HEIGHT,
-            (i + j) % 2 == 0 ? "#ffffff" : "#22aa44"));
+        Board.push(new Square((i + j) % 2 == 0 ? "#ffffff" : "#22aa44"));
     }
 }
 
@@ -239,12 +254,45 @@ function highlightSquares(positions: [number, number][]) {
     });
 }
 
-Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+function updatePrompt(json) {
+    let prompt = "";
 
-canvas.addEventListener('mouseup', e => {
-    const x = Math.floor(e.offsetX / Square.WIDTH);
-    const y = Math.floor(e.offsetY / Square.HEIGHT);
+    switch(json) {
+        case states.WhiteLost:
+            prompt = "Black Wins";
+            break;
+        case states.BlackLost:
+            prompt = "White Wins";
+            break;
+        case states.Stalemate:
+            prompt = "It's a Draw";
+            break;
+        case states.Continue:
+            switch(turn) {
+                case Colours.White:
+                    prompt = "Black's Turn";
+                    turn = Colours.Black;
+                    break;
+                case Colours.Black:
+                    prompt = "White's Turn";
+                    turn = Colours.White;
+                    break;
+            }
+            break;
+    }
+
+    promptElement.innerHTML = prompt;
+}
+
+function touchCanvas(e) {
+    const x = Math.floor(e.offsetX / Square.getWidth());
+    const y = Math.floor(e.offsetY / Square.getHeight());
     const index = y * COLS + x;
 
     selectSquare(index);
-})
+}
+
+Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+
+canvas.addEventListener('mouseup', e => {touchCanvas(e)})
+// canvas.addEventListener('touchend', e => {touchCanvas(e)})
