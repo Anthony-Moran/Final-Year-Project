@@ -295,4 +295,3 @@ function touchCanvas(e) {
 Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
 
 canvas.addEventListener('mouseup', e => {touchCanvas(e)})
-// canvas.addEventListener('touchend', e => {touchCanvas(e)})
