@@ -4,7 +4,7 @@
 #
 # Note: move log class inspired by Eddie Sharick
 #
-from Piece import Rook, Knight, Bishop, Queen, King, Pawn
+from Piece import Piece, Rook, Knight, Bishop, Queen, King, Pawn
 from enums import Player
 
 '''

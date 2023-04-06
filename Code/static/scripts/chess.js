@@ -35,6 +35,21 @@ var states;
     states[states["Stalemate"] = 2] = "Stalemate";
     states[states["Continue"] = 3] = "Continue";
 })(states || (states = {}));
+// @ts-ignore
+var engine_to_web_pieces = new Map([
+    ['r', Pieces.Rook],
+    ['n', Pieces.Knight],
+    ['b', Pieces.Bishop],
+    ['k', Pieces.King],
+    ['q', Pieces.Queen],
+    ['p', Pieces.Pawn],
+    [' ', Pieces.None]
+]);
+// @ts-ignore
+var engine_to_web_colours = new Map([
+    ['white', Colours.White],
+    ['black', Colours.Black]
+]);
 var Piece = /** @class */ (function () {
     function Piece(colour, type) {
         this.colour = colour;
@@ -98,13 +113,23 @@ var Square = /** @class */ (function () {
         }
         this.selected = true;
         SelectedSquare = this;
-        fetch("http://192.168.0.169:8000/chess?index=".concat(Board.indexOf(this)))
+        var send_data = JSON.stringify({
+            'index': Board.indexOf(this)
+        });
+        fetch("".concat(CHESS_URL), {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: send_data
+        })
             .then(function (response) { return response.json(); })
             .then(function (json) {
             highlightSquares(json);
             drawBoard();
         })
-            .catch(function (error) { return console.log("Error: ".concat(error)); });
+            .catch(function (error) { return console.log("Error Select: ".concat(error)); });
     };
     Square.prototype.unselect = function () {
         this.selected = false;
@@ -122,10 +147,22 @@ var Square = /** @class */ (function () {
         if (this.piece == null) {
             return;
         }
-        var queryParams = "index=".concat(Board.indexOf(SelectedSquare), "&indexMove=").concat(Board.indexOf(moveSquare));
-        fetch("http://192.168.0.169:8000/chess?".concat(queryParams))
+        fetch("".concat(CHESS_URL), {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'index': Board.indexOf(SelectedSquare),
+                'indexMove': Board.indexOf(moveSquare)
+            })
+        })
             .then(function (response) { return response.json(); })
-            .then(function (json) { return updatePrompt(json); })
+            .then(function (json) {
+            turn = turn == Colours.White ? Colours.Black : Colours.White;
+            updatePrompt(json);
+        })
             .catch(function (error) { return console.log(error); });
         moveSquare.piece = this.piece;
         this.piece = null;
@@ -136,7 +173,7 @@ var Square = /** @class */ (function () {
     return Square;
 }());
 function updateCanvas() {
-    var vmin = Math.min(canvasParent.clientWidth, canvasParent.clientHeight);
+    var vmin = Math.min(document.body.clientWidth, canvasContainer.clientHeight);
     canvas.width = vmin;
     canvas.height = vmin;
     Square.setWidth(vmin / COLS);
@@ -150,48 +187,31 @@ function drawBoard() {
 }
 var ROWS = 8;
 var COLS = 8;
+var CHESS_URL = window.location.href;
+var BOARD_URL = CHESS_URL.replace('chess', 'board');
 var canvas = document.querySelector("#board");
-var canvasParent = canvas.parentElement;
+var canvasContainer = canvas.parentElement;
 var ctx = canvas.getContext("2d");
 var promptElement = document.querySelector("#Prompt");
 var Board = [];
-var turn = Colours.White;
+var turn;
 var SelectedSquare = null;
 var HighlightedSquares = [];
-updateCanvas();
-window.addEventListener('resize', updateCanvas);
 // Initialise Squares
 for (var i = 0; i < ROWS; i++) {
     for (var j = 0; j < COLS; j++) {
         Board.push(new Square((i + j) % 2 == 0 ? "#ffffff" : "#22aa44"));
     }
 }
+window.addEventListener('load', function () {
+    updateCanvas();
+    updateState();
+});
+window.addEventListener('resize', updateCanvas);
 function onSpriteSheetLoad() {
     Piece.WIDTH = this.width / 6;
     Piece.HEIGHT = this.height / 2;
-    Board[0].setPiece(new Piece(Colours.White, Pieces.Rook));
-    Board[1].setPiece(new Piece(Colours.White, Pieces.Knight));
-    Board[2].setPiece(new Piece(Colours.White, Pieces.Bishop));
-    Board[3].setPiece(new Piece(Colours.White, Pieces.King));
-    Board[4].setPiece(new Piece(Colours.White, Pieces.Queen));
-    Board[5].setPiece(new Piece(Colours.White, Pieces.Bishop));
-    Board[6].setPiece(new Piece(Colours.White, Pieces.Knight));
-    Board[7].setPiece(new Piece(Colours.White, Pieces.Rook));
-    for (var i = 8; i < 16; i++) {
-        Board[i].setPiece(new Pawn(Colours.White, Pieces.Pawn));
-    }
-    Board[56].setPiece(new Piece(Colours.Black, Pieces.Rook));
-    Board[57].setPiece(new Piece(Colours.Black, Pieces.Knight));
-    Board[58].setPiece(new Piece(Colours.Black, Pieces.Bishop));
-    Board[59].setPiece(new Piece(Colours.Black, Pieces.King));
-    Board[60].setPiece(new Piece(Colours.Black, Pieces.Queen));
-    Board[61].setPiece(new Piece(Colours.Black, Pieces.Bishop));
-    Board[62].setPiece(new Piece(Colours.Black, Pieces.Knight));
-    Board[63].setPiece(new Piece(Colours.Black, Pieces.Rook));
-    for (var i = 48; i < 56; i++) {
-        Board[i].setPiece(new Pawn(Colours.Black, Pieces.Pawn));
-    }
-    drawBoard();
+    setInterval(updateState, 1000);
 }
 function selectSquare(index) {
     if (SelectedSquare != null) {
@@ -224,9 +244,10 @@ function highlightSquares(positions) {
         Board[index].highlight();
     });
 }
-function updatePrompt(json) {
+function updatePrompt(state, check) {
+    if (check === void 0) { check = false; }
     var prompt = "";
-    switch (json) {
+    switch (state) {
         case states.WhiteLost:
             prompt = "Black Wins";
             break;
@@ -239,13 +260,14 @@ function updatePrompt(json) {
         case states.Continue:
             switch (turn) {
                 case Colours.White:
-                    prompt = "Black's Turn";
-                    turn = Colours.Black;
+                    prompt = "White's Turn";
                     break;
                 case Colours.Black:
-                    prompt = "White's Turn";
-                    turn = Colours.White;
+                    prompt = "Black's Turn";
                     break;
+            }
+            if (check) {
+                prompt += " (In Check)";
             }
             break;
     }
@@ -257,5 +279,39 @@ function touchCanvas(e) {
     var index = y * COLS + x;
     selectSquare(index);
 }
-Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+function updateState() {
+    fetch(BOARD_URL)
+        .then(function (response) { return response.json(); })
+        .then(function (json) {
+        turn = Number(json['turn']);
+        var state = json['state'];
+        var in_check = json['check'];
+        json['board'].forEach(function (elm, index) {
+            if (elm != ' ') {
+                var _a = elm.split(' '), type = _a[0], colour = _a[1];
+                type = engine_to_web_pieces.get(type);
+                colour = engine_to_web_colours.get(colour);
+                var piece = new Piece(colour, type);
+                Board[index].setPiece(piece);
+            }
+            else {
+                Board[index].setPiece(null);
+            }
+        });
+        updatePrompt(state, in_check);
+        drawBoard();
+    })
+        .catch(function (error) { return console.log("Error updateState: ".concat(error)); });
+}
+if (Piece.SPRITE_SHEET.complete) {
+    onSpriteSheetLoad.bind(Piece.SPRITE_SHEET)();
+}
+else {
+    Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+}
 canvas.addEventListener('mouseup', function (e) { touchCanvas(e); });
+var game_link = document.createElement('a');
+game_link.href = window.location.href;
+game_link.innerHTML = "Game Link";
+var text_div = document.querySelector('div.text');
+text_div.append(game_link);

@@ -20,6 +20,23 @@ enum states {
     Continue
 }
 
+// @ts-ignore
+const engine_to_web_pieces = new Map<string, Pieces>([
+    ['r', Pieces.Rook],
+    ['n', Pieces.Knight],
+    ['b', Pieces.Bishop],
+    ['k', Pieces.King],
+    ['q', Pieces.Queen],
+    ['p', Pieces.Pawn],
+    [' ', Pieces.None]
+]);
+
+// @ts-ignore
+const engine_to_web_colours = new Map<string, Colours>([
+    ['white', Colours.White],
+    ['black', Colours.Black]
+])
+
 class Piece {
     static SPRITE_SHEET = <HTMLImageElement> document.querySelector("#ImagePieces");
     static WIDTH;
@@ -106,13 +123,24 @@ class Square {
         this.selected = true;
         SelectedSquare = this;
 
-        fetch(`http://192.168.0.169:8000/chess?index=${Board.indexOf(this)}`)
+        const send_data = JSON.stringify({
+            'index': Board.indexOf(this)
+        });
+
+        fetch(`${CHESS_URL}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: send_data
+        })
             .then(response => response.json())
             .then(json => {
                 highlightSquares(json)
                 drawBoard();
             })
-            .catch(error => console.log(`Error: ${error}`));
+            .catch(error => console.log(`Error Select: ${error}`));
     }
     unselect() {
         this.selected = false;
@@ -131,10 +159,22 @@ class Square {
     move(moveSquare: Square) {
         if (this.piece == null) {return;}
 
-        const queryParams = `index=${Board.indexOf(SelectedSquare)}&indexMove=${Board.indexOf(moveSquare)}`;
-        fetch(`http://192.168.0.169:8000/chess?${queryParams}`)
+        fetch(`${CHESS_URL}`, {
+            method: 'PUT',
+            headers: {
+                'Accept': 'application/json',
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                'index': Board.indexOf(SelectedSquare),
+                'indexMove': Board.indexOf(moveSquare)
+            })
+        })
             .then(response => response.json())
-            .then(json => updatePrompt(json))
+            .then(json => {
+                turn = turn == Colours.White ? Colours.Black : Colours.White;
+                updatePrompt(json);
+            })
             .catch(error => console.log(error));
 
 
@@ -149,7 +189,7 @@ class Square {
 }
 
 function updateCanvas() {
-    const vmin = Math.min(canvasParent.clientWidth, canvasParent.clientHeight);
+    const vmin = Math.min(document.body.clientWidth, canvasContainer.clientHeight);
     canvas.width = vmin;
     canvas.height = vmin;
 
@@ -167,18 +207,18 @@ function drawBoard() {
 const ROWS = 8;
 const COLS = 8;
 
+const CHESS_URL = window.location.href;
+const BOARD_URL = CHESS_URL.replace('chess', 'board');
+
 const canvas = <HTMLCanvasElement> document.querySelector("#board");
-const canvasParent = canvas.parentElement;
+const canvasContainer = canvas.parentElement;
 const ctx = canvas.getContext("2d");
 const promptElement = <HTMLHeadingElement> document.querySelector("#Prompt");
 
 const Board: Square[] = [];
-let turn = Colours.White;
+let turn: Colours;
 let SelectedSquare: Square = null;
 const HighlightedSquares: Square[] = [];
-
-updateCanvas();
-window.addEventListener('resize', updateCanvas);
 
 // Initialise Squares
 for (let i = 0; i < ROWS; i++) {
@@ -187,41 +227,20 @@ for (let i = 0; i < ROWS; i++) {
     }
 }
 
+window.addEventListener('load', () => {
+    updateCanvas();
+    updateState();
+})
+window.addEventListener('resize', updateCanvas);
+
 function onSpriteSheetLoad() {
     Piece.WIDTH = this.width / 6;
     Piece.HEIGHT = this.height / 2;
 
-    Board[0].setPiece(new Piece(Colours.White, Pieces.Rook));
-    Board[1].setPiece(new Piece(Colours.White, Pieces.Knight));
-    Board[2].setPiece(new Piece(Colours.White, Pieces.Bishop));
-    Board[3].setPiece(new Piece(Colours.White, Pieces.King));
-    Board[4].setPiece(new Piece(Colours.White, Pieces.Queen));
-    Board[5].setPiece(new Piece(Colours.White, Pieces.Bishop));
-    Board[6].setPiece(new Piece(Colours.White, Pieces.Knight));
-    Board[7].setPiece(new Piece(Colours.White, Pieces.Rook));
-
-    for (let i=8; i<16; i++) {
-        Board[i].setPiece(new Pawn(Colours.White, Pieces.Pawn));
-    }
-
-    Board[56].setPiece(new Piece(Colours.Black, Pieces.Rook));
-    Board[57].setPiece(new Piece(Colours.Black, Pieces.Knight));
-    Board[58].setPiece(new Piece(Colours.Black, Pieces.Bishop));
-    Board[59].setPiece(new Piece(Colours.Black, Pieces.King));
-    Board[60].setPiece(new Piece(Colours.Black, Pieces.Queen));
-    Board[61].setPiece(new Piece(Colours.Black, Pieces.Bishop));
-    Board[62].setPiece(new Piece(Colours.Black, Pieces.Knight));
-    Board[63].setPiece(new Piece(Colours.Black, Pieces.Rook));
-
-    for (let i=48; i<56; i++) {
-        Board[i].setPiece(new Pawn(Colours.Black, Pieces.Pawn));
-    }
-
-    drawBoard();
+    setInterval(updateState, 1000);
 }
 
 function selectSquare(index: number) {
-
     if (SelectedSquare != null) {
         // @ts-ignore
         const highlightedSquare = HighlightedSquares.find(square => square === Board[index]);
@@ -254,10 +273,10 @@ function highlightSquares(positions: [number, number][]) {
     });
 }
 
-function updatePrompt(json) {
+function updatePrompt(state, check=false) {
     let prompt = "";
 
-    switch(json) {
+    switch(state) {
         case states.WhiteLost:
             prompt = "Black Wins";
             break;
@@ -270,13 +289,14 @@ function updatePrompt(json) {
         case states.Continue:
             switch(turn) {
                 case Colours.White:
-                    prompt = "Black's Turn";
-                    turn = Colours.Black;
+                    prompt = "White's Turn";
                     break;
                 case Colours.Black:
-                    prompt = "White's Turn";
-                    turn = Colours.White;
+                    prompt = "Black's Turn";
                     break;
+            }
+            if (check) {
+                prompt += " (In Check)";
             }
             break;
     }
@@ -292,6 +312,42 @@ function touchCanvas(e) {
     selectSquare(index);
 }
 
-Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+function updateState() {
+    fetch(BOARD_URL)
+        .then(response => response.json())
+        .then(json => {
+            turn = Number(json['turn']);
+            const state = json['state'];
+            const in_check = json['check'];
 
+            json['board'].forEach((elm, index) => {
+                if (elm != ' ') {
+                    let [type, colour] = elm.split(' ');
+                    type = engine_to_web_pieces.get(type);
+                    colour = engine_to_web_colours.get(colour);
+                    const piece = new Piece(colour, type);
+                    Board[index].setPiece(piece);
+                } else {
+                    Board[index].setPiece(null);
+                }
+            });
+
+            updatePrompt(state, in_check);
+            drawBoard();
+        })
+        .catch(error => console.log(`Error updateState: ${error}`));
+}
+
+if (Piece.SPRITE_SHEET.complete) {
+    onSpriteSheetLoad.bind(Piece.SPRITE_SHEET)();
+} else {
+    Piece.SPRITE_SHEET.onload = onSpriteSheetLoad;
+}
 canvas.addEventListener('mouseup', e => {touchCanvas(e)})
+
+const game_link = document.createElement('a');
+game_link.href = window.location.href;
+game_link.innerHTML = "Game Link";
+
+const text_div = document.querySelector('div.text');
+text_div.append(game_link);
