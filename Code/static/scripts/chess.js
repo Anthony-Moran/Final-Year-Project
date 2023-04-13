@@ -126,8 +126,8 @@ var Square = /** @class */ (function () {
                 return response.json();
             }
             else {
-                promptElement.style.color = 'red';
-                console.log(response);
+                alertNotPlayerTurn(); // Need to change this only when player attemps to pick a piece when it is not their turn
+                // Other condition is that it is their turn but they're choosing a piece of the opposite colour
                 throw new Error(response.statusText);
             }
         })
@@ -200,6 +200,7 @@ var Board = [];
 var turn;
 var SelectedSquare = null;
 var HighlightedSquares = [];
+var alertTimer = null;
 // Initialise Squares
 for (var i = 0; i < ROWS; i++) {
     for (var j = 0; j < COLS; j++) {
@@ -274,9 +275,23 @@ function updatePrompt(state, check) {
             if (check) {
                 prompt += " (In Check)";
             }
+            if (alertTimer != null && promptElement.innerHTML != prompt) {
+                clearTimeout(alertTimer);
+                alertNotPlayerTurnCallback();
+            }
             break;
     }
     promptElement.innerHTML = prompt;
+}
+function alertNotPlayerTurn() {
+    if (alertTimer != null) {
+        clearTimeout(alertTimer);
+    }
+    promptElement.style.color = 'red';
+    alertTimer = setTimeout(alertNotPlayerTurnCallback, 2000);
+}
+function alertNotPlayerTurnCallback() {
+    promptElement.style.color = 'black';
 }
 function touchCanvas(e) {
     var x = Math.floor(e.offsetX / Square.getWidth());
