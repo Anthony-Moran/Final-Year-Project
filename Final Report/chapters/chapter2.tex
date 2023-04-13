@@ -1,15 +1,22 @@
 \chapter{Methods}
 \label{chapter2}
 
-Add some general text about the methods here
+All of the code developed for this project has been managed by git and pushed to my online github respository with can be accessed by the link:
+
+\begin{center}
+    https://github.com/Anthony-Moran/Final-Year-Project
+\end{center}
+
+The history will show the various stages of my project and how I started off with a blank workspace and ended up with this project now.
 
 \section{Back End}
 
-Add some general text about the back end here
+Although the front and back end of this project have been worked on simultaneously, I will begin by describing the process for how I designed the back end first. This is due to the fact that the front end depends on the features developed on the back end in order to function.
+I have developed the back end using Python 3.10, the Flask framework and the Flask-RESTful extension to allow for a RESTful implementation of my service. I have chosen this language for my backend because I have previous experience building web services with it, and the quality of the code should reflect this. Additionally, the framework abstracts a lot of the processing involved for developing a REST based service, which meant I could focus more on the business logic of my application.
 
 \subsection{Flask/Flask-RESTful}
 
-Add some general text about the implementation of flask and flask-RESTful here
+Before delving into any web service, there is some boilerplate that is required. This can be seen in one of the early commits to this project where I set up an initial connection to the local host and add my first resource, routed to the base URL. For those unfamiliar with flask-RESTful, the way that it functions is by assigning everthing as a resource *referencing may be necessary*. Each resoucrce can be assigned any of the 4 CRUD operations, i.e. Create, Read, Update or Delete, via a POST, GET, PUT and DELETE request respecitvely. The initial resource only features a get request and it returns the index.html file.
 
 \subsection{Chess Logic}
 
