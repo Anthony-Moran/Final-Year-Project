@@ -2,10 +2,27 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>AM Chess</title>
+
+    <link rel="stylesheet" href="../static/styles/index.css">
 </head>
 <body>
     <h1>AM Chess</h1>
-    <p>Welcome to <a href="#">AM Chess</a></p>
+    <main>
+        <div id="NewGameContainer">
+            <p>Press the button to start a New Game!</p>
+            <a id="LinkNewGame" href="/new">New Game</a>
+        </div>
+        <div id="ExistingGameContainer">
+            <p>Or if you know the ID of the game you want to join, enter it here.</p>
+            <form action="/existing" method="post">
+                <label for="Game ID">Game ID:</label>
+                <input type="text" name="GameID" id="GameID">
+                <button type="submit">Join</button>
+            </form>
+        </div>
+    </main>
+    <script src="static/scripts/index.js"></script>
 </body>
 </html>

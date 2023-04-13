@@ -1,0 +1,94 @@
+:root {
+    --app-height: 100%;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: var(--app-height);
+    overflow: hidden;
+}
+
+h1 {
+    margin-top: 50px;
+}
+
+main {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    flex: 1 1 0px;
+    width: 100%;
+}
+
+/* PC Unique Style  */
+@media (orientation: landscape) {
+    main {
+        flex-direction: row;
+    }
+
+    main > div {
+        height: 75%;
+        max-width: 500px;
+        max-height: 500px;
+    }
+}
+
+main > div {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+
+    margin: 20px;
+    padding: 10px;
+    background-color: whitesmoke;
+    border-radius: 10px;
+
+    text-align: center;
+    width: 80%;
+    flex: 1 1 0;
+}
+
+main > div > * {
+    margin: 10px 0;
+}
+
+#LinkNewGame {
+    border: 1px dashed white;
+    border-radius: 15px;
+    padding: 10px 25px;
+    text-decoration: none;
+    color: white;
+    background-color: black;
+}
+
+#LinkNewGame:hover {
+    background-color: grey;
+}
+
+#ExistingGameContainer > form > button {
+    margin-left: 10px;
+}
+
+#GameID {
+    width: 15%;
+    border: 1px solid black;
+}
+
+button, a {
+    background-color: lightblue;
+    border: 1px dashed black;
+    border-radius: 5px;
+    padding: 10px 12px;
+}

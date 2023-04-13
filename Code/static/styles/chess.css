@@ -1,29 +1,61 @@
 * {
     box-sizing: border-box;
+    padding: 0;
     margin: 0;
     text-align: center;
 }
 
-html {
-    overflow: hidden;
-}
-
 body {
     margin: auto;
+
+    display: flex;
+    flex-direction: column;
+
+    width: 100vw;
+    height: 100vh;
+}
+
+main {
+    margin: auto;
     padding: 2vmin;
+
+    flex: 1 1 0;
     width: 100vmin;
     height: 100vmin;
-
     display: flex;
     flex-direction: column;
     align-items: center;
 }
 
+nav {
+    background-color: lightgrey;
+    width: 100vw;
+    height: 5vmin;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    border-radius: 0 0 20px 20px;
+    padding: 30px;
+}
+
+nav > a {
+    text-decoration: none;
+    color: black;
+    font-size: large;
+}
+
+nav > a:hover {
+    font-weight: bold;
+}
+
 #CanvasContainer {
     position: relative;
-    margin: 2vmin;
     flex-grow: 1;
     width: 100%;
+    min-width: 200px;
+    min-height: 200px;
 }
 
 canvas {

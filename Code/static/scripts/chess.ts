@@ -114,20 +114,15 @@ class Square {
 
     select() {
         if (this.piece == null) {
-            // Draw the board so that the old selected square is no longer highlighted
             unhighlightSquares();
-            drawBoard();
             return;
         }
-
-        this.selected = true;
-        SelectedSquare = this;
 
         const send_data = JSON.stringify({
             'index': Board.indexOf(this)
         });
 
-        fetch(`${CHESS_URL}`, {
+        fetch(BOARD_URL, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
@@ -135,16 +130,29 @@ class Square {
             },
             body: send_data
         })
-            .then(response => response.json())
-            .then(json => {
-                highlightSquares(json)
-                drawBoard();
+            .then(response => {
+                if (response.ok) {
+                    return response.json();
+                } else {
+                    promptElement.style.color = 'red';
+                    console.log(response);
+                    throw new Error(response.statusText);
+                }
             })
-            .catch(error => console.log(`Error Select: ${error}`));
+            .then(json => {
+                this.selected = true;
+                SelectedSquare = this;
+
+                highlightSquares(json);
+            })
+            .catch(error => {
+                console.log(error);
+            });
     }
     unselect() {
         this.selected = false;
         SelectedSquare = null
+        drawBoard();
     }
 
     highlight() {
@@ -159,7 +167,7 @@ class Square {
     move(moveSquare: Square) {
         if (this.piece == null) {return;}
 
-        fetch(`${CHESS_URL}`, {
+        fetch(BOARD_URL, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
@@ -170,26 +178,18 @@ class Square {
                 'indexMove': Board.indexOf(moveSquare)
             })
         })
-            .then(response => response.json())
-            .then(json => {
-                turn = turn == Colours.White ? Colours.Black : Colours.White;
-                updatePrompt(json);
+            .then(() => {        
+                SelectedSquare.unselect();
+                unhighlightSquares();
+        
+                updateState()
             })
             .catch(error => console.log(error));
-
-
-        moveSquare.piece = this.piece;
-        this.piece = null;
-
-        SelectedSquare.unselect();
-        unhighlightSquares();
-
-        drawBoard();
     }
 }
 
 function updateCanvas() {
-    const vmin = Math.min(document.body.clientWidth, canvasContainer.clientHeight);
+    const vmin = Math.min(canvasContainer.clientWidth, canvasContainer.clientHeight);
     canvas.width = vmin;
     canvas.height = vmin;
 
@@ -230,14 +230,14 @@ for (let i = 0; i < ROWS; i++) {
 window.addEventListener('load', () => {
     updateCanvas();
     updateState();
-})
+});
 window.addEventListener('resize', updateCanvas);
 
 function onSpriteSheetLoad() {
     Piece.WIDTH = this.width / 6;
     Piece.HEIGHT = this.height / 2;
 
-    setInterval(updateState, 1000);
+    setInterval(updateState, 500);
 }
 
 function selectSquare(index: number) {
@@ -261,6 +261,8 @@ function unhighlightSquares() {
     while ((square = HighlightedSquares.pop()) != undefined) {
         square.unhighlight();
     }
+
+    drawBoard();
 }
 
 function highlightSquares(positions: [number, number][]) {
@@ -271,6 +273,8 @@ function highlightSquares(positions: [number, number][]) {
         const index = position[0] * COLS + position[1];
         Board[index].highlight();
     });
+
+    drawBoard();
 }
 
 function updatePrompt(state, check=false) {
@@ -351,3 +355,7 @@ game_link.innerHTML = "Game Link";
 
 const text_div = document.querySelector('div.text');
 text_div.append(game_link);
+
+const p = document.createElement('p');
+p.innerHTML = `Game ID: ${CHESS_URL.match(/\d+$/)}`
+text_div.append(p);

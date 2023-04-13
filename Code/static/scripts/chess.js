@@ -105,18 +105,15 @@ var Square = /** @class */ (function () {
     Square.setHeight = function (height) { Square.HEIGHT = height; };
     Square.prototype.setPiece = function (piece) { this.piece = piece; };
     Square.prototype.select = function () {
+        var _this = this;
         if (this.piece == null) {
-            // Draw the board so that the old selected square is no longer highlighted
             unhighlightSquares();
-            drawBoard();
             return;
         }
-        this.selected = true;
-        SelectedSquare = this;
         var send_data = JSON.stringify({
             'index': Board.indexOf(this)
         });
-        fetch("".concat(CHESS_URL), {
+        fetch(BOARD_URL, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
@@ -124,16 +121,28 @@ var Square = /** @class */ (function () {
             },
             body: send_data
         })
-            .then(function (response) { return response.json(); })
-            .then(function (json) {
-            highlightSquares(json);
-            drawBoard();
+            .then(function (response) {
+            if (response.ok) {
+                return response.json();
+            }
+            else {
+                promptElement.style.color = 'red';
+                console.log(response);
+                throw new Error(response.statusText);
+            }
         })
-            .catch(function (error) { return console.log("Error Select: ".concat(error)); });
+            .then(function (json) {
+            _this.selected = true;
+            SelectedSquare = _this;
+            highlightSquares(json);
+        })["catch"](function (error) {
+            console.log(error);
+        });
     };
     Square.prototype.unselect = function () {
         this.selected = false;
         SelectedSquare = null;
+        drawBoard();
     };
     Square.prototype.highlight = function () {
         this.highlighted = true;
@@ -147,7 +156,7 @@ var Square = /** @class */ (function () {
         if (this.piece == null) {
             return;
         }
-        fetch("".concat(CHESS_URL), {
+        fetch(BOARD_URL, {
             method: 'PUT',
             headers: {
                 'Accept': 'application/json',
@@ -158,22 +167,16 @@ var Square = /** @class */ (function () {
                 'indexMove': Board.indexOf(moveSquare)
             })
         })
-            .then(function (response) { return response.json(); })
-            .then(function (json) {
-            turn = turn == Colours.White ? Colours.Black : Colours.White;
-            updatePrompt(json);
-        })
-            .catch(function (error) { return console.log(error); });
-        moveSquare.piece = this.piece;
-        this.piece = null;
-        SelectedSquare.unselect();
-        unhighlightSquares();
-        drawBoard();
+            .then(function () {
+            SelectedSquare.unselect();
+            unhighlightSquares();
+            updateState();
+        })["catch"](function (error) { return console.log(error); });
     };
     return Square;
 }());
 function updateCanvas() {
-    var vmin = Math.min(document.body.clientWidth, canvasContainer.clientHeight);
+    var vmin = Math.min(canvasContainer.clientWidth, canvasContainer.clientHeight);
     canvas.width = vmin;
     canvas.height = vmin;
     Square.setWidth(vmin / COLS);
@@ -211,7 +214,7 @@ window.addEventListener('resize', updateCanvas);
 function onSpriteSheetLoad() {
     Piece.WIDTH = this.width / 6;
     Piece.HEIGHT = this.height / 2;
-    setInterval(updateState, 1000);
+    setInterval(updateState, 500);
 }
 function selectSquare(index) {
     if (SelectedSquare != null) {
@@ -233,6 +236,7 @@ function unhighlightSquares() {
     while ((square = HighlightedSquares.pop()) != undefined) {
         square.unhighlight();
     }
+    drawBoard();
 }
 function highlightSquares(positions) {
     unhighlightSquares();
@@ -243,6 +247,7 @@ function highlightSquares(positions) {
         var index = position[0] * COLS + position[1];
         Board[index].highlight();
     });
+    drawBoard();
 }
 function updatePrompt(state, check) {
     if (check === void 0) { check = false; }
@@ -300,8 +305,7 @@ function updateState() {
         });
         updatePrompt(state, in_check);
         drawBoard();
-    })
-        .catch(function (error) { return console.log("Error updateState: ".concat(error)); });
+    })["catch"](function (error) { return console.log("Error updateState: ".concat(error)); });
 }
 if (Piece.SPRITE_SHEET.complete) {
     onSpriteSheetLoad.bind(Piece.SPRITE_SHEET)();
@@ -315,3 +319,6 @@ game_link.href = window.location.href;
 game_link.innerHTML = "Game Link";
 var text_div = document.querySelector('div.text');
 text_div.append(game_link);
+var p = document.createElement('p');
+p.innerHTML = "Game ID: ".concat(CHESS_URL.match(/\d+$/));
+text_div.append(p);

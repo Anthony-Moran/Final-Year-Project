@@ -2,16 +2,20 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../static/styles/chess.css">
     <title>Am Chess</title>
 </head>
 <body>
-    <div class="text">
-        <h2 id="Prompt">White's Turn</h2>
-    </div>
-    <div id="CanvasContainer">
-        <canvas id="board"></canvas>
-    </div>
+    <nav><a href="/">Home</a></nav>
+    <main>
+        <div class="text">
+            <h2 id="Prompt">Turn</h2>
+        </div>
+        <div id="CanvasContainer">
+            <canvas id="board"></canvas>
+        </div>
+    </main>
     <img id="ImagePieces" src="../static/images/pieces.png" style="display: none">
     <script src="../static/scripts/chess.js"></script>
 </body>
