@@ -181,8 +181,14 @@ function draw_piece_from_char(index, char) {
 }
 
 export function select(selection, available_moves) {
+    const old_selection = current_selection;
+
     unselect();
     unhighlight_available_moves();
+
+    if (JSON.stringify(old_selection) == JSON.stringify(selection)) {
+        return;
+    }
 
     const [square, char] = selection;
     if (char == "") {
