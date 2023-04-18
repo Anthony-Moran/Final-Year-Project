@@ -49,19 +49,3 @@ nav > a {
 nav > a:hover {
     font-weight: bold;
 }
-
-#CanvasContainer {
-    position: relative;
-    flex-grow: 1;
-    width: 100%;
-    min-width: 200px;
-    min-height: 200px;
-}
-
-canvas {
-    border: 2px solid #222;
-    position: absolute;
-    margin: auto;
-    left: 0;
-    right: 0;
-}

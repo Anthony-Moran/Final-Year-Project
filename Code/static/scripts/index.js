@@ -1,6 +1,7 @@
-var appHeight = function () {
-    var doc = document.documentElement;
-    doc.style.setProperty('--app-height', "".concat(window.innerHeight, "px"));
+function appHeight() {
+    const doc = document.documentElement;
+    doc.style.setProperty('--app-height', `${window.innerHeight}px`);
 };
+
 window.addEventListener('resize', appHeight);
 appHeight();
