@@ -3,7 +3,6 @@ let square_size;
 
 const canvas = document.createElement('canvas');
 const ctx = canvas.getContext('2d');
-ctx.font = "30px Arial";
 
 const chess_spritesheet = document.querySelector('img');
 const spritesheet_rows = 2;
@@ -24,6 +23,8 @@ export function create_board(container) {
 
     canvas.width = vmin;
     canvas.height = vmin;
+    ctx.font = "15px Arial";
+    ctx.textBaseline = "top";
 
     frame_width = chess_spritesheet.width / spritesheet_cols;
     frame_height = chess_spritesheet.height / spritesheet_rows;
@@ -149,19 +150,19 @@ function draw_square(index, colour=null) {
 function draw_square_name(index) {
     const [row, col] = get_rowcol_from_index(index);
     const [x, y] = get_xy_from_index(index);
+    const padding = 3;
     ctx.fillStyle = "#515151";
 
     if (row == 0) {
         const str = String.fromCharCode(97+col);
-        const text_metrics = ctx.measureText(str)
+        const text_metrics = ctx.measureText(str);
         const width = text_metrics.width;
-        ctx.fillText(str, x + square_size - width, y + square_size);
+        const height = text_metrics.fontBoundingBoxDescent;
+        ctx.fillText(str, x + square_size - width - padding, y + square_size - height - padding);
     }
     if (col == 0) {
         const str = (row+1).toString();
-        const text_metrics = ctx.measureText(str);
-        const height = text_metrics.actualBoundingBoxAscent + text_metrics.actualBoundingBoxDescent;
-        ctx.fillText(str, x, y + height);
+        ctx.fillText(str, x + padding, y + padding);
     }
 }
 
@@ -195,14 +196,15 @@ export function select(selection, available_moves) {
     highlight_available_moves(available_moves)
 }
 
-export function play(start, end_square) {
-    unselect();
-    unhighlight_available_moves();
+function unselect() {
+    if (current_selection == null) {
+        return;
+    }
 
-    const [start_square, piece] = start;
-    draw_square(start_square);
-    draw_square(end_square);
-    draw_piece(end_square, piece);
+    const [square, piece] = current_selection
+    draw_square(square);
+    draw_piece_from_char(square, piece);
+    current_selection = null;
 }
 
 function highlight_available_moves(available_moves) {
@@ -217,23 +219,14 @@ function highlight_available_moves(available_moves) {
     }
 
     available_moves.forEach(move => {
-        const [square, piece] = move;
+        const [square, char] = move;
         draw_square(square, COLOUR_HIGHLIGHT);
-        draw_piece(square, piece);
+        if (char != "") {
+            draw_piece_from_char(square, char);
+        }
     });
 
     current_moves = available_moves;
-}
-
-function unselect() {
-    if (current_selection == null) {
-        return;
-    }
-
-    const [square, piece] = current_selection
-    draw_square(square);
-    draw_piece_from_char(square, piece);
-    current_selection = null;
 }
 
 function unhighlight_available_moves() {
@@ -257,6 +250,17 @@ export function attempting_move(move) {
     return current_moves.map(move => move[0]).find(available_move => JSON.stringify(available_move) == JSON.stringify(move)) != undefined
 }
 
-export function get_current_selection_pos() {
+export function play(start, end_square) {
+    unselect();
+    unhighlight_available_moves();
+
+    const [start_square, char] = start;
+    console.log(start_square, char, end_square);
+    draw_square(start_square);
+    draw_square(end_square);
+    draw_piece_from_char(end_square, char);
+}
+
+export function get_current_selection_index() {
     return current_selection[0];
 }

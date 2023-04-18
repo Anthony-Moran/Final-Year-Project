@@ -21,6 +21,10 @@ def get_valid_moves_from(index):
         valid_squares.append(move[2:])
     return list(map(map_squarename_to_validmove, valid_squares))
 
+def get_piece_from_square(square):
+    piece = board.piece_at(square)
+    return piece.symbol() if piece is not None else ""
+
 async def handler(websocket):
     async for message in websocket:
         message = json.loads(message)
@@ -36,22 +40,21 @@ async def handler(websocket):
 
         if message["type"] == "select":
             available_moves = get_valid_moves_from(message["square"])
-            piece = board.piece_at(message["square"])
-            piece = piece.symbol() if piece is not None else ""
 
             event = {
                 "type": "select",
                 "square": message["square"],
-                "piece": piece,
+                "piece": get_piece_from_square(message["square"]),
                 "available moves": available_moves
             }
             await websocket.send(json.dumps(event))
 
         if message["type"] == "play":
-            board.move_piece(message["start square"], tuple(message["end square"]), False)
+            move = chess.Move(message["start square"], message["end square"]) # Will have to add edge case for promotion
+            board.push(move)
             await websocket.send(json.dumps({
                 "type": "play",
-                "start": (message["start square"], board.get_piece_string(message["end square"][0], message["end square"][1])),
+                "start": (message["start square"], get_piece_from_square(message["end square"])),
                 "end square": message["end square"]
             }))
 
