@@ -1,26 +1,35 @@
 import * as game from "./game.js";
+const websocket_address = `ws://${window.location.hostname}:8001/`
 
 function init(websocket) {
     websocket.addEventListener("open", () => {
+        const params = new URLSearchParams(window.location.search);
         const event = {"type": "init"};
+
+        if (params.has("join")) {
+            event.join = params.get("join");
+        }
+
         websocket.send(JSON.stringify(event));
     });
 }
 
-function sendHandler(board, websocket) {
-    board.addEventListener("click", event => {
+function sendHandler(websocket) {
+    game.click(event => {
         let send_data = null;
         const index = game.get_index_from_xy(event.offsetX, event.offsetY);
 
         if (game.attempting_move(index)) {
             send_data = {
                 "type": "play",
+                "player": game.get_player(),
                 "start square": game.get_current_selection_index(),
                 "end square": index
             }
         } else {
             send_data = {
                 "type": "select",
+                "player": game.get_player(),
                 "square": index
             }
         }
@@ -29,18 +38,22 @@ function sendHandler(board, websocket) {
     })
 }
 
-function receiveHandler(board, websocket) {
+function receiveHandler(websocket) {
     websocket.addEventListener("message", ({data}) => {
-        data = JSON.parse(data);
-        switch (data["type"]) {
+        const event = JSON.parse(data);
+        switch (event.type) {
             case "init":
-                game.init_pieces(data.board);
+                game.init(event.board, event.player);
+                document.querySelector("#joinLink").href = "?join="+event.join
                 break;
             case "select":
-                game.select([data["square"], data["piece"]], data["available moves"]);
+                game.select([event.square, event.piece], event["available moves"]);
                 break;
             case "play":
-                game.play(data["start"], data["end square"]);
+                game.play(event.start, event["end square"]);
+                break;
+            case "error":
+                alert(event["message"]);
                 break;
             }
     });
@@ -50,8 +63,8 @@ window.addEventListener('DOMContentLoaded', () => {
     const container = document.querySelector('#CanvasContainer');
     const board = game.create_board(container);
 
-    const websocket = new WebSocket("ws://localhost:8001/");
+    const websocket = new WebSocket(websocket_address);
     init(websocket);
-    sendHandler(board, websocket);
-    receiveHandler(board, websocket);
+    sendHandler(websocket);
+    receiveHandler(websocket);
 });

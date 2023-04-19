@@ -1,7 +1,7 @@
 const ROWS_AND_COLS = 8;
 let square_size;
 
-const canvas = document.createElement('canvas');
+const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
 const chess_spritesheet = document.querySelector('img');
@@ -9,6 +9,12 @@ const spritesheet_rows = 2;
 const spritesheet_cols = 6;
 let frame_width;
 let frame_height;
+
+
+const WHITE = true;
+const BLACK = false;
+let player;
+let current_player;
 
 const COLOUR0 = "#22aa44";
 const COLOUR1 = "#ffffff";
@@ -18,8 +24,9 @@ const COLOUR_HIGHLIGHT = "#33aaff";
 let current_selection = null;
 let current_moves = null;
 
-export function create_board(container) {
-    const vmin = 480;
+export function create_board() {
+    const container = canvas.parentElement;
+    const vmin = Math.min(container.clientWidth, container.clientHeight);
 
     canvas.width = vmin;
     canvas.height = vmin;
@@ -33,12 +40,13 @@ export function create_board(container) {
     for (let i=0; i<ROWS_AND_COLS**2; i++) {
         draw_square(i);
     }
-
-    container.append(canvas);
-    return canvas;
 }
 
-export function init_pieces(fen) {
+export function click(callback) {
+    canvas.addEventListener("click", callback);
+}
+
+export function init(fen, given_player) {
     let row = ROWS_AND_COLS - 1, col = 0;
     for (let i=0; i<fen.length; i++) {
         const char = fen[i];
@@ -58,6 +66,12 @@ export function init_pieces(fen) {
         draw_piece_from_char(get_index_from_rowcol(row, col), char);
         col += 1;
     }
+
+    player = given_player ? WHITE : BLACK;
+}
+
+export function get_player() {
+    return player;
 }
 
 function get_piece_from_char(char) {
