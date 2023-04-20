@@ -68,13 +68,15 @@ main > div > * {
     margin: 10px 0;
 }
 
-button {
+button, a {
     background-color: cornflowerblue;
     color: white;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: medium;
     border-radius: 5px;
     border: 2px solid white;
     padding: 6px 12px;
+    text-decoration: none;
 }
 
 button:hover {
@@ -85,7 +87,7 @@ button:hover {
     margin-left: 10px;
 }
 
-#GameID {
+#join-input {
     width: 15%;
     border: 1px solid black;
 }

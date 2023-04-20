@@ -5,3 +5,6 @@ function appHeight() {
 
 window.addEventListener('resize', appHeight);
 appHeight();
+
+const JOIN_CODE_INPUT = document.querySelector("join-input");
+const JOIN_BUTTON = document.querySelector("join-button");
