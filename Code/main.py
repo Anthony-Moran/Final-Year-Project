@@ -110,8 +110,21 @@ async def play(websocket, board: chess.Board, player, connected):
                 "type": "play",
                 "start square": event["start square"],
                 "end square": event["end square"],
-                "piece": end_piece
+                "piece": end_piece,
+                "check": board.is_check()
             }))
+
+            # End game conditions
+            if board.is_checkmate():
+                websockets.broadcast(connected, json.dumps({
+                    "type": "win",
+                    "winner": board.outcome().winner
+                }))
+            elif board.is_stalemate():
+                websockets.broadcast(connected, json.dumps({
+                    "type": "draw",
+                    "reason": "stalemate"
+                }))
 
 async def start(websocket):
     board = chess.Board()

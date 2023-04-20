@@ -60,7 +60,14 @@ function receiveHandler(websocket) {
                 game.select([event.square, event.piece], event["available moves"]);
                 break;
             case "play":
-                game.play(event["start square"], event["end square"], event.piece);
+                game.play(event["start square"], event["end square"], event.piece, event.check);
+                break;
+            case "win":
+                game.win(event.winner);
+                websocket.close();
+                break;
+            case "draw":
+                game.draw(event.reason);
                 break;
             case "promotion":
                 game.choose_promotion()

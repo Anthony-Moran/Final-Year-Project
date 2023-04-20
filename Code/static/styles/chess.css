@@ -56,6 +56,10 @@ nav > a:hover {
     position: relative;
 }
 
+#ChessBoard {
+    border: 1px solid black;
+}
+
 #PromotionPanel {
     background-color: #515151;
     position: absolute;

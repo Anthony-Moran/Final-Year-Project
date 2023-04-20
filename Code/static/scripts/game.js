@@ -343,14 +343,22 @@ export function attempting_move(move) {
     return current_moves.map(move => move[0]).find(available_move => JSON.stringify(available_move) == JSON.stringify(move)) != undefined
 }
 
-export function play(start_square, end_square, char) {
+export function play(start_square, end_square, char, check) {
     unselect();
     unhighlight_available_moves();
 
     draw_square(start_square);
     draw_square(end_square);
     draw_piece_from_char(end_square, char);
-    update_turn();
+    update_turn(!turn, check);
+}
+
+export function win(winner) {
+    display_winner(winner);
+}
+
+export function draw(reason) {
+    display_draw(reason);
 }
 
 export function get_current_selection_index() {
@@ -367,9 +375,24 @@ export function hide_promotion_panel() {
     promotion_panel.style.display = "none";
 }
 
-function update_turn(given_turn) {
-    turn = given_turn == undefined ? !turn : given_turn;
-    const player_name = turn ? "White" : "Black";
-    const text = `${player_name}'s Turn`;
+function get_player_from_bool(bool) {
+    return bool ? "White" : "Black";
+}
+
+function update_turn(given_turn, check) {
+    turn = given_turn;
+    const player_text = get_player_from_bool(turn);
+    const check_text = check ? " (In check)" : "";
+    const text = `${player_text}'s Turn${check_text}`;
     prompt.innerHTML = text;
+}
+
+function display_winner(winner) {
+    const player_text = get_player_from_bool(winner);
+    const text = `Checkmate (${player_text} Wins)`;
+    prompt.innerHTML = text;
+}
+
+function display_draw(reason) {
+    prompt.innerHTML = `Draw (${reason})`;
 }
