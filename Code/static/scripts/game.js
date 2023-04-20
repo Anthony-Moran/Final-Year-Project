@@ -2,7 +2,8 @@ const ROWS_AND_COLS = 8;
 let square_size;
 
 const canvas = document.querySelector("#ChessBoard");
-const ctx = canvas.getContext('2d');
+const ctx = canvas.getContext("2d");
+const prompt = document.querySelector("#Prompt");
 
 const promotion_panel = document.querySelector("#PromotionPanel");
 
@@ -20,6 +21,7 @@ let frame_height;
 const WHITE = true;
 const BLACK = false;
 let player;
+let turn;
 
 const COLOUR0 = "#22aa44";
 const COLOUR1 = "#ffffff";
@@ -53,7 +55,15 @@ export function pp_click(callback) {
     })
 }
 
-export function init(fen, given_player) {
+export function init(fen, given_player, given_turn, join_key) {
+    // This needs to go first because the presence of the link will affect the size of the canvas element
+    const join_link_element = document.querySelector("#joinLink")
+    if (join_key != undefined) {
+        join_link_element.href = "?join="+join_key;
+    } else {
+        join_link_element.style.display = "none";
+    }
+
     const container = canvas.parentElement;
     const vmin = Math.min(container.clientWidth, container.clientHeight);
 
@@ -67,6 +77,7 @@ export function init(fen, given_player) {
 
     square_size = vmin / ROWS_AND_COLS;
     player = given_player ? WHITE : BLACK;
+    update_turn(given_turn);
 
     const pp_width = canvas.width * pp_percent_width
     const pp_height = canvas.height * pp_percent_height
@@ -339,6 +350,7 @@ export function play(start_square, end_square, char) {
     draw_square(start_square);
     draw_square(end_square);
     draw_piece_from_char(end_square, char);
+    update_turn();
 }
 
 export function get_current_selection_index() {
@@ -353,4 +365,11 @@ export function choose_promotion() {
 export function hide_promotion_panel() {
     choosing_promotion = false;
     promotion_panel.style.display = "none";
+}
+
+function update_turn(given_turn) {
+    turn = given_turn == undefined ? !turn : given_turn;
+    const player_name = turn ? "White" : "Black";
+    const text = `${player_name}'s Turn`;
+    prompt.innerHTML = text;
 }

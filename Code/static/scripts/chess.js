@@ -54,8 +54,7 @@ function receiveHandler(websocket) {
         const event = JSON.parse(data);
         switch (event.type) {
             case "init":
-                game.init(event.board, event.player);
-                document.querySelector("#joinLink").href = "?join="+event.join
+                game.init(event.board, event.player, event.turn, event.join);
                 break;
             case "select":
                 game.select([event.square, event.piece], event["available moves"]);

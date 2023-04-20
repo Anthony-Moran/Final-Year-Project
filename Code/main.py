@@ -127,7 +127,8 @@ async def start(websocket):
             "type": "init",
             "join": join_key,
             "board": board.board_fen(),
-            "player": player
+            "player": player,
+            "turn": board.turn
         }))
         await play(websocket, board, player, connected)
     finally:
@@ -150,7 +151,8 @@ async def join(websocket, join_key):
         await websocket.send(json.dumps({
             "type": "init",
             "board": board.board_fen(),
-            "player": player
+            "player": player,
+            "turn": board.turn
         }))
         await play(websocket, board, player, connected)
     finally:
