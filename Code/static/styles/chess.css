@@ -53,4 +53,18 @@ nav > a:hover {
 #CanvasContainer {
     width: 100%;
     flex: 1 1 0;
+    position: relative;
+}
+
+#PromotionPanel {
+    background-color: #515151;
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+}
+
+.pp-piece {
+    background-color: grey;
+    position: absolute;
 }

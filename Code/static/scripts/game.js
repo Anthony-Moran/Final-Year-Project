@@ -1,8 +1,15 @@
 const ROWS_AND_COLS = 8;
 let square_size;
 
-const canvas = document.querySelector('canvas');
+const canvas = document.querySelector("#ChessBoard");
 const ctx = canvas.getContext('2d');
+
+const promotion_panel = document.querySelector("#PromotionPanel");
+
+const pp_pieces = document.querySelectorAll(".pp-piece");
+const pp_pieces_symbols = ["q", "r", "n", "b"];
+const pp_percent_width = .8;
+const pp_percent_height = .2;
 
 const chess_spritesheet = document.querySelector('img');
 const spritesheet_rows = 2;
@@ -10,11 +17,9 @@ const spritesheet_cols = 6;
 let frame_width;
 let frame_height;
 
-
 const WHITE = true;
 const BLACK = false;
 let player;
-let current_player;
 
 const COLOUR0 = "#22aa44";
 const COLOUR1 = "#ffffff";
@@ -24,7 +29,31 @@ const COLOUR_HIGHLIGHT = "#33aaff";
 let current_selection = null;
 let current_moves = null;
 
-export function create_board() {
+let choosing_promotion = false;
+
+export function click(callback) {
+    canvas.addEventListener("click", event => {
+        if (choosing_promotion) {
+            return;
+        }
+
+        callback(event);
+    });
+}
+
+export function pp_click(callback) {
+    pp_pieces.forEach((piece, index) => {
+        piece.addEventListener("click", () => {
+            hide_promotion_panel();
+
+            let symbol = pp_pieces_symbols[index];
+            symbol = player ? symbol.toUpperCase() : symbol.toLowerCase();
+            callback(symbol);
+        })
+    })
+}
+
+export function init(fen, given_player) {
     const container = canvas.parentElement;
     const vmin = Math.min(container.clientWidth, container.clientHeight);
 
@@ -37,37 +66,35 @@ export function create_board() {
     frame_height = chess_spritesheet.height / spritesheet_rows;
 
     square_size = vmin / ROWS_AND_COLS;
-    for (let i=0; i<ROWS_AND_COLS**2; i++) {
-        draw_square(i);
-    }
-}
-
-export function click(callback) {
-    canvas.addEventListener("click", callback);
-}
-
-export function init(fen, given_player) {
-    let row = ROWS_AND_COLS - 1, col = 0;
-    for (let i=0; i<fen.length; i++) {
-        const char = fen[i];
-
-        if (char == '/') {
-            row -= 1;
-            col = 0;
-            continue;
-        }
-
-        if (!isNaN(char)) {
-            const num = Number(char);
-            col += num;
-            continue;
-        }
-
-        draw_piece_from_char(get_index_from_rowcol(row, col), char);
-        col += 1;
-    }
-
     player = given_player ? WHITE : BLACK;
+
+    const pp_width = canvas.width * pp_percent_width
+    const pp_height = canvas.height * pp_percent_height
+    promotion_panel.style.width = pp_width + "px";
+    promotion_panel.style.height = pp_height + "px";
+    promotion_panel.style.top = (canvas.height - promotion_panel.clientHeight) / 2 + "px";
+    const pp_padding = 10;
+
+    const pp_piece_width = (pp_width - pp_padding * (pp_pieces.length + 1)) / pp_pieces.length;
+    const pp_piece_height = pp_height - pp_padding * 2;
+    const pp_piece_size = Math.min(pp_piece_width, pp_piece_height);
+    const pp_revised_padding = (pp_width - pp_piece_size * pp_pieces.length) / (pp_pieces.length + 1);
+
+    pp_pieces.forEach((piece, index) => {
+        piece.width = pp_piece_size;
+        piece.height = pp_piece_size;
+        piece.style.left = (pp_piece_size + pp_revised_padding) * index + pp_revised_padding + "px";
+        piece.style.top = (pp_height - pp_piece_size) / 2 + "px";
+
+        const ctx = piece.getContext("2d");
+        let piece_symbol = pp_pieces_symbols[index];
+        piece_symbol = player ? piece_symbol.toUpperCase() : piece_symbol.toLowerCase();
+        const [sx, sy, sw, sh] = get_source_rect_from_char(piece_symbol);
+        ctx.drawImage(chess_spritesheet, sx, sy, sw, sh,
+            0, 0, pp_piece_size, pp_piece_size);
+    })
+
+    draw_board(fen);
 }
 
 export function get_player() {
@@ -115,6 +142,11 @@ function get_source_rect(piece) {
     const x = get_source_col(type) * frame_width;
     const y = get_source_row(colour) * frame_height;
     return [x, y, frame_width, frame_height];
+}
+
+function get_source_rect_from_char(char) {
+    const piece = get_piece_from_char(char);
+    return get_source_rect(piece);
 }
 
 function get_source_row(colour) {
@@ -194,6 +226,36 @@ function draw_piece_from_char(index, char) {
     draw_piece(index, piece);
 }
 
+function draw_board(fen) {
+    for (let i=0; i<ROWS_AND_COLS**2; i++) {
+        draw_square(i);
+    }
+    
+    let row = ROWS_AND_COLS - 1, col = 0;
+    for (let i=0; i<fen.length; i++) {
+        const char = fen[i];
+
+        if (char == '/') {
+            row -= 1;
+            col = 0;
+            continue;
+        }
+
+        if (!isNaN(char)) {
+            const num = Number(char);
+            col += num;
+            continue;
+        }
+
+        const index = get_index_from_rowcol(row, col);
+        draw_piece_from_char(index, char);
+        col += 1;
+    }}
+
+export function clear(index) {
+    draw_square(index);
+}
+
 export function select(selection, available_moves) {
     const old_selection = current_selection;
 
@@ -270,12 +332,10 @@ export function attempting_move(move) {
     return current_moves.map(move => move[0]).find(available_move => JSON.stringify(available_move) == JSON.stringify(move)) != undefined
 }
 
-export function play(start, end_square) {
+export function play(start_square, end_square, char) {
     unselect();
     unhighlight_available_moves();
 
-    const [start_square, char] = start;
-    console.log(start_square, char, end_square);
     draw_square(start_square);
     draw_square(end_square);
     draw_piece_from_char(end_square, char);
@@ -283,4 +343,14 @@ export function play(start, end_square) {
 
 export function get_current_selection_index() {
     return current_selection[0];
+}
+
+export function choose_promotion() {
+    choosing_promotion = true;
+    promotion_panel.style.display = "block";
+}
+
+export function hide_promotion_panel() {
+    choosing_promotion = false;
+    promotion_panel.style.display = "none";
 }

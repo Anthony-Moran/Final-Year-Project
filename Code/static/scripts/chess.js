@@ -16,6 +16,10 @@ function init(websocket) {
 
 function sendHandler(websocket) {
     game.click(event => {
+        if (game.choosing_promotion) {
+            return;
+        }
+
         let send_data = null;
         const index = game.get_index_from_xy(event.offsetX, event.offsetY);
 
@@ -35,7 +39,14 @@ function sendHandler(websocket) {
         }
 
         websocket.send(JSON.stringify(send_data));
-    })
+    });
+
+    game.pp_click(piece => {
+        websocket.send(JSON.stringify({
+            "type": "promotion",
+            "piece": piece
+        }));
+    });
 }
 
 function receiveHandler(websocket) {
@@ -50,19 +61,22 @@ function receiveHandler(websocket) {
                 game.select([event.square, event.piece], event["available moves"]);
                 break;
             case "play":
-                game.play(event.start, event["end square"]);
+                game.play(event["start square"], event["end square"], event.piece);
+                break;
+            case "promotion":
+                game.choose_promotion()
+                break;
+            case "clear":
+                game.clear(event.piece);
                 break;
             case "error":
-                alert(event["message"]);
+                alert(event.message);
                 break;
             }
     });
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    const container = document.querySelector('#CanvasContainer');
-    const board = game.create_board(container);
-
     const websocket = new WebSocket(websocket_address);
     init(websocket);
     sendHandler(websocket);
