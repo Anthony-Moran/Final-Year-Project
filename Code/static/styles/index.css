@@ -2,12 +2,6 @@
     --app-height: 100%;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 body {
     display: flex;
     flex-direction: column;
@@ -83,11 +77,24 @@ button:hover {
     background-color:deepskyblue;
 }
 
+#ExistingGameContainer > form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#join-input {
+    width: 30%;
+    font-size: larger;
+    text-transform: uppercase;
+}
+
 #ExistingGameContainer > form > button {
     margin-left: 10px;
 }
 
-#join-input {
-    width: 15%;
-    border: 1px solid black;
+#not-existing-prompt {
+    color: crimson;
+    margin-top: 0;
+    display: none;
 }

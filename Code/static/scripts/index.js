@@ -6,5 +6,11 @@ function appHeight() {
 window.addEventListener('resize', appHeight);
 appHeight();
 
-const JOIN_CODE_INPUT = document.querySelector("join-input");
-const JOIN_BUTTON = document.querySelector("join-button");
+
+const params = new URLSearchParams(window.location.search);
+const not_existing_prompt = document.querySelector("#not-existing-prompt");
+
+if (params.has("badRequest") && params.get("badRequest")=="true") {
+    console.log("something")
+    not_existing_prompt.style.display = "block";
+}

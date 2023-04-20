@@ -3,7 +3,12 @@ let square_size;
 
 const canvas = document.querySelector("#ChessBoard");
 const ctx = canvas.getContext("2d");
+
 const prompt = document.querySelector("#Prompt");
+const join_text_element = document.querySelector("#join-text");
+const join_link_element = document.querySelector("#join-link");
+const join_code_element = document.querySelector("#join-code-text");
+join_text_element.style.display = "none"
 
 const promotion_panel = document.querySelector("#PromotionPanel");
 
@@ -11,6 +16,7 @@ const pp_pieces = document.querySelectorAll(".pp-piece");
 const pp_pieces_symbols = ["q", "r", "n", "b"];
 const pp_percent_width = .8;
 const pp_percent_height = .2;
+const pp_padding = 10;
 
 const chess_spritesheet = document.querySelector('img');
 const spritesheet_rows = 2;
@@ -57,34 +63,38 @@ export function pp_click(callback) {
 
 export function init(fen, given_player, given_turn, join_key) {
     // This needs to go first because the presence of the link will affect the size of the canvas element
-    const join_link_element = document.querySelector("#joinLink")
     if (join_key != undefined) {
         join_link_element.href = "?join="+join_key;
+        join_code_element.innerHTML = join_key;
+        join_text_element.style.display = "block";
     } else {
-        join_link_element.style.display = "none";
+        join_text_element.style.display = "none";
     }
 
-    const container = canvas.parentElement;
-    const vmin = Math.min(container.clientWidth, container.clientHeight);
-
-    canvas.width = vmin;
-    canvas.height = vmin;
-    ctx.font = "15px Arial";
-    ctx.textBaseline = "top";
+    player = given_player ? WHITE : BLACK;
+    update_turn(given_turn);
 
     frame_width = chess_spritesheet.width / spritesheet_cols;
     frame_height = chess_spritesheet.height / spritesheet_rows;
 
-    square_size = vmin / ROWS_AND_COLS;
-    player = given_player ? WHITE : BLACK;
-    update_turn(given_turn);
+    init_canvas(fen);
+}
+
+export function init_canvas(fen) {
+    const container = canvas.parentElement;
+    const min = Math.min(container.clientWidth, container.clientHeight);
+    square_size = min / ROWS_AND_COLS;
+
+    canvas.width = min;
+    canvas.height = min;
+    ctx.font = "15px Arial";
+    ctx.textBaseline = "top";
 
     const pp_width = canvas.width * pp_percent_width
     const pp_height = canvas.height * pp_percent_height
     promotion_panel.style.width = pp_width + "px";
     promotion_panel.style.height = pp_height + "px";
     promotion_panel.style.top = (canvas.height - promotion_panel.clientHeight) / 2 + "px";
-    const pp_padding = 10;
 
     const pp_piece_width = (pp_width - pp_padding * (pp_pieces.length + 1)) / pp_pieces.length;
     const pp_piece_height = pp_height - pp_padding * 2;
@@ -108,6 +118,11 @@ export function init(fen, given_player, given_turn, join_key) {
     draw_board(fen);
 }
 
+export function remove_join_text(fen) {
+    join_text_element.style.display = "none";
+    init_canvas(fen);
+}
+
 export function get_player() {
     return player;
 }
@@ -123,13 +138,19 @@ function get_piece_from_char(char) {
 }
 
 export function get_rowcol_from_xy(x, y) {
-    const row = ROWS_AND_COLS - Math.floor(y / square_size) - 1;
-    const col = Math.floor(x / square_size);
+    let row = Math.floor(y / square_size);
+    if (player) {
+        row = ROWS_AND_COLS - row - 1;
+    }
+    let col = Math.floor(x / square_size);
+    if (!player) {
+        col = ROWS_AND_COLS - col - 1;
+    }
     return [row, col];
 }
 
 function get_rowcol_from_index(index) {
-    const row = Math.floor(index / ROWS_AND_COLS);
+    let row = Math.floor(index / ROWS_AND_COLS);
     const col = index % ROWS_AND_COLS;
     return [row, col];
 }
@@ -140,8 +161,14 @@ export function get_index_from_xy(x, y) {
 }
 
 function get_xy_from_index(index) {
-    const [row, col] = get_rowcol_from_index(index);
-    return [col * square_size, (ROWS_AND_COLS - row - 1) * square_size];
+    let [row, col] = get_rowcol_from_index(index);
+    if (player) {
+        row = ROWS_AND_COLS - row - 1;
+    }
+    if (!player) {
+        col = ROWS_AND_COLS - col - 1;
+    }
+    return [col * square_size, row * square_size];
 }
 
 function get_index_from_rowcol(row, col) {
@@ -210,14 +237,14 @@ function draw_square_name(index) {
     const padding = 3;
     ctx.fillStyle = "#515151";
 
-    if (row == 0) {
+    if (row == 0 && player || row == 7 && !player) {
         const str = String.fromCharCode(97+col);
         const text_metrics = ctx.measureText(str);
         const width = text_metrics.width;
         const height = text_metrics.fontBoundingBoxDescent;
         ctx.fillText(str, x + square_size - width - padding, y + square_size - height - padding);
     }
-    if (col == 0) {
+    if (col == 0 && player || col == 7 && !player) {
         const str = (row+1).toString();
         ctx.fillText(str, x + padding, y + padding);
     }
@@ -235,6 +262,28 @@ function draw_piece(index, piece) {
 function draw_piece_from_char(index, char) {
     const piece = get_piece_from_char(char);
     draw_piece(index, piece);
+}
+
+function draw_selection(selection, available_moves) {
+    if (selection == undefined) {
+        if (current_selection == null) {
+            return;
+        } else {
+            selection = current_selection;
+            available_moves = current_moves;
+        }
+    }
+
+    const [square, char] = selection;
+    if (char == "") {
+        return;
+    }
+
+    draw_square(square, COLOUR_SELECT);
+    draw_piece_from_char(square, char);
+
+    current_selection = selection;
+    highlight_available_moves(available_moves)
 }
 
 function draw_board(fen) {
@@ -261,7 +310,11 @@ function draw_board(fen) {
         const index = get_index_from_rowcol(row, col);
         draw_piece_from_char(index, char);
         col += 1;
-    }}
+    }
+
+    draw_selection();
+}
+
 
 export function clear(index) {
     draw_square(index);
@@ -277,16 +330,7 @@ export function select(selection, available_moves) {
         return;
     }
 
-    const [square, char] = selection;
-    if (char == "") {
-        return;
-    }
-
-    draw_square(square, COLOUR_SELECT);
-    draw_piece_from_char(square, char);
-
-    current_selection = selection;
-    highlight_available_moves(available_moves)
+    draw_selection(selection, available_moves);
 }
 
 function unselect() {
@@ -301,16 +345,6 @@ function unselect() {
 }
 
 function highlight_available_moves(available_moves) {
-    if (current_moves != null) {
-        current_moves.forEach(move => {
-            const [square, char] = move;
-            draw_square(square);
-            if (char != "") {
-                draw_piece_from_char(square, char);
-            }
-        })
-    }
-
     available_moves.forEach(move => {
         const [square, char] = move;
         draw_square(square, COLOUR_HIGHLIGHT);
@@ -384,7 +418,7 @@ function update_turn(given_turn, check) {
     const player_text = get_player_from_bool(turn);
     const check_text = check ? " (In check)" : "";
     const text = `${player_text}'s Turn${check_text}`;
-    prompt.innerHTML = text;
+    prompt.innerHTML = `~ ${text} ~`;
 }
 
 function display_winner(winner) {

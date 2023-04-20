@@ -1,10 +1,16 @@
 import asyncio
 import websockets
 import json
-import secrets
+import random
+from string import ascii_uppercase, digits
 
 import chess
 Boards = {}
+
+JOIN_KEY_LENGTH = 4
+POTENTIAL_KEY_CHARACTERS = ascii_uppercase+digits
+
+URL_404 = "/?badRequest=true"
 
 def map_squarename_to_validmove(board, square_name):
     square = chess.parse_square(square_name)
@@ -29,6 +35,28 @@ def get_piece_from_square(board, square):
 def get_piecetype_from_symbol(symbol):
     return chess.Piece.from_symbol(symbol).piece_type
 
+def generate_join_key():
+    success = False
+
+    for _ in range(1000):
+        key = "".join(random.choice(POTENTIAL_KEY_CHARACTERS) for _ in range(JOIN_KEY_LENGTH))
+    
+        if key not in Boards.keys():
+            success = True
+            break
+
+    if not success:
+        raise RuntimeError
+    else:
+        return key
+    
+async def bad_request(websocket):
+    await websocket.send(json.dumps({
+        "type": "bad request",
+        "urlBad": URL_404,
+        "urlDisconnected": "/"
+    }))
+
 async def error(websocket, message):
     event = {
         "type": "error",
@@ -37,14 +65,23 @@ async def error(websocket, message):
     await websocket.send(json.dumps(event))
 
 async def play(websocket, board: chess.Board, player, connected):
-    async for message in websocket:
+    while True:
+        try:
+            message = await websocket.recv()
+        except websockets.ConnectionClosed:
+            websockets.broadcast(connected, json.dumps({
+                "type": "opponent disconnected",
+                "url": "/"
+            }))
+            break
+        
         event = json.loads(message)
-        assert event["type"] == "select" or event["type"] == "play"
 
-        if event["player"] == chess.WHITE and not board.turn or\
-        event["player"] == chess.BLACK and board.turn:
-            await error(websocket, "It is not your turn yet")
-            continue
+        if event["type"] == "select" or event["type"] == "play":
+            if event["player"] == chess.WHITE and not board.turn or\
+            event["player"] == chess.BLACK and board.turn:
+                await error(websocket, "It is not your turn yet")
+                continue
 
         if event["type"] == "select":
             available_moves = get_valid_moves_from(board, event["square"])
@@ -125,12 +162,23 @@ async def play(websocket, board: chess.Board, player, connected):
                     "type": "draw",
                     "reason": "stalemate"
                 }))
+        
+        if event["type"] == "resize":
+            await websocket.send(json.dumps({
+                "type": "resize",
+                "board": board.board_fen()
+            }))
 
 async def start(websocket):
     board = chess.Board()
     connected = {websocket}
 
-    join_key = secrets.token_urlsafe(12)
+    try:
+        join_key = generate_join_key()
+    except RuntimeError:
+        error(websocket, "Could not generate a unique key for this game, please try again")
+        return
+
     Boards[join_key] = board, connected
 
     player = chess.WHITE
@@ -149,13 +197,13 @@ async def start(websocket):
 
 async def join(websocket, join_key):
     try:
-        board, connected = Boards[join_key]
+        board, connected = Boards[join_key.upper()]
     except KeyError:
-        await error(websocket, "Game not found.")
+        await bad_request(websocket)
         return
     
     if len(connected) >= 2:
-        await error("The game already has two players")
+        await error(websocket, "The game already has two players") # redirect request as "watch"
         return
     
     connected.add(websocket)
@@ -166,6 +214,10 @@ async def join(websocket, join_key):
             "board": board.board_fen(),
             "player": player,
             "turn": board.turn
+        }))
+        websockets.broadcast(connected, json.dumps({
+            "type": "player joined",
+            "board": board.board_fen()
         }))
         await play(websocket, board, player, connected)
     finally:

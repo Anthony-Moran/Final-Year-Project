@@ -1,6 +1,8 @@
 import * as game from "./game.js";
 const websocket_address = `ws://${window.location.hostname}:8001/`
 
+let resize_timeout;
+
 function init(websocket) {
     websocket.addEventListener("open", () => {
         const params = new URLSearchParams(window.location.search);
@@ -47,6 +49,15 @@ function sendHandler(websocket) {
             "piece": piece
         }));
     });
+
+    window.addEventListener("resize", () => {
+        clearTimeout(resize_timeout);
+        resize_timeout = setTimeout(() => {
+            websocket.send(JSON.stringify({
+            "type": "resize"
+        }))
+    }, 250); 
+    });
 }
 
 function receiveHandler(websocket) {
@@ -62,9 +73,12 @@ function receiveHandler(websocket) {
             case "play":
                 game.play(event["start square"], event["end square"], event.piece, event.check);
                 break;
+            case "player joined":
+                game.remove_join_text(event.board);
+                break;
             case "win":
                 game.win(event.winner);
-                websocket.close();
+                close_websocket(websocket);
                 break;
             case "draw":
                 game.draw(event.reason);
@@ -75,6 +89,17 @@ function receiveHandler(websocket) {
             case "clear":
                 game.clear(event.piece);
                 break;
+            case "opponent disconnected":
+                alert("The opponent disconnected/resigned...");
+                close_websocket(websocket);
+                window.location.replace(event.url);
+                break;
+            case "resize":
+                game.init_canvas(event.board);
+                break;
+            case "bad request":
+                window.location.replace(event.urlBad);
+                break;
             case "error":
                 alert(event.message);
                 break;
@@ -82,9 +107,24 @@ function receiveHandler(websocket) {
     });
 }
 
+function connectionHandler(websocket) {
+    websocket.addEventListener("close", alertBrokenConnection);
+}
+
+function alertBrokenConnection() {
+    alert("The connection has broken while you were gone...");
+    window.location.replace("/");
+}
+
+function close_websocket(websocket) {
+    websocket.removeEventListener("close", alertBrokenConnection);
+    websocket.close()
+}
+
 window.addEventListener('DOMContentLoaded', () => {
     const websocket = new WebSocket(websocket_address);
     init(websocket);
     sendHandler(websocket);
     receiveHandler(websocket);
+    connectionHandler(websocket);
 });
