@@ -61,18 +61,20 @@ export function pp_click(callback) {
     })
 }
 
-export function init(fen, given_player, given_turn, join_key) {
+export function init(fen, given_player, given_turn, join_key, finished, finished_reason, winner) {
     // This needs to go first because the presence of the link will affect the size of the canvas element
-    if (join_key != undefined) {
-        join_link_element.href = "?join="+join_key;
-        join_code_element.innerHTML = join_key;
-        join_text_element.style.display = "block";
+    if (!finished) {
+        init_join_text(join_key);
+        update_turn(given_turn);
     } else {
-        join_text_element.style.display = "none";
+        if (finished_reason == "Checkmate") {
+            display_winner(winner);
+        } else if (finished_reason == "Stalemate") {
+            display_draw(finished_reason)
+        }
     }
 
     player = given_player ? WHITE : BLACK;
-    update_turn(given_turn);
 
     frame_width = chess_spritesheet.width / spritesheet_cols;
     frame_height = chess_spritesheet.height / spritesheet_rows;
@@ -118,9 +120,31 @@ export function init_canvas(fen) {
     draw_board(fen);
 }
 
+function init_join_text(join_key) {
+    join_link_element.href = "?join="+join_key;
+    join_code_element.innerHTML = join_key;
+    show_join_text_first();
+}
+
+function show_join_text_first() {
+    join_text_element.style.display = "block";
+}
+
+export function show_join_text(fen) {
+    show_join_text_first();
+    init_canvas(fen);
+}
+
 export function remove_join_text(fen) {
     join_text_element.style.display = "none";
     init_canvas(fen);
+}
+
+export function player_joined(full, fen) {
+    if (!full) {
+        return;
+    }
+    remove_join_text(fen)
 }
 
 export function get_player() {
@@ -429,4 +453,12 @@ function display_winner(winner) {
 
 function display_draw(reason) {
     prompt.innerHTML = `Draw (${reason})`;
+}
+
+export function opponent_disconnected(finished, board) {
+    if (finished) {
+        return;
+    }
+
+    show_join_text(board);
 }

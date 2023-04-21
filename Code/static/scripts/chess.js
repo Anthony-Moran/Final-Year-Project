@@ -8,8 +8,16 @@ function init(websocket) {
         const params = new URLSearchParams(window.location.search);
         const event = {"type": "init"};
 
+        if (params.has("new")) {
+            event.type = "new"
+        }
+
         if (params.has("join")) {
             event.join = params.get("join");
+
+            if (params.has("reconnecting")) {
+                event.reconnecting = params.get("reconnecting");
+            }
         }
 
         websocket.send(JSON.stringify(event));
@@ -64,8 +72,13 @@ function receiveHandler(websocket) {
     websocket.addEventListener("message", ({data}) => {
         const event = JSON.parse(data);
         switch (event.type) {
+            case "new":
+                close_websocket(websocket);
+                window.location.replace(event.url);
+                break;
             case "init":
-                game.init(event.board, event.player, event.turn, event.join);
+                game.init(event.board, event.player, event.turn, event.join,
+                    event.finished, event["finished reason"], event.winner);
                 break;
             case "select":
                 game.select([event.square, event.piece], event["available moves"]);
@@ -74,7 +87,7 @@ function receiveHandler(websocket) {
                 game.play(event["start square"], event["end square"], event.piece, event.check);
                 break;
             case "player joined":
-                game.remove_join_text(event.board);
+                game.player_joined(event.full, event.board);
                 break;
             case "win":
                 game.win(event.winner);
@@ -90,15 +103,31 @@ function receiveHandler(websocket) {
                 game.clear(event.piece);
                 break;
             case "opponent disconnected":
-                alert("The opponent disconnected/resigned...");
-                close_websocket(websocket);
-                window.location.replace(event.url);
+                game.opponent_disconnected(event.board);
+                break;
+            case "reconnecting":
+                alert(event.message);
+                if (!event.success) {
+                    close_websocket(websocket);
+                    window.location.replace(event.url);
+                }
                 break;
             case "resize":
                 game.init_canvas(event.board);
                 break;
             case "bad request":
-                window.location.replace(event.urlBad);
+                close_websocket(websocket);
+                window.location.replace(event.url);
+                break;
+            case "full":
+                close_websocket(websocket);
+                alert(event.message);
+                window.location.replace(event.url);
+                break;
+            case "invalid url":
+                close_websocket(websocket);
+                alert(event.message);
+                window.location.replace(event.url);
                 break;
             case "error":
                 alert(event.message);
@@ -112,8 +141,10 @@ function connectionHandler(websocket) {
 }
 
 function alertBrokenConnection() {
-    alert("The connection has broken while you were gone...");
-    window.location.replace("/");
+    alert("The connection to the server was broken...");
+    const params = new URLSearchParams(window.location.search);
+    params.append('reconnecting', true);
+    window.location.search = params.toString();
 }
 
 function close_websocket(websocket) {

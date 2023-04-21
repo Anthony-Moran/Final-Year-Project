@@ -12,6 +12,9 @@ POTENTIAL_KEY_CHARACTERS = ascii_uppercase+digits
 
 URL_404 = "/?badRequest=true"
 
+def get_join_url(join_key):
+    return f"/chess.html?join={join_key}"
+
 def map_squarename_to_validmove(board, square_name):
     square = chess.parse_square(square_name)
     piece = board.piece_at(square)
@@ -35,6 +38,40 @@ def get_piece_from_square(board, square):
 def get_piecetype_from_symbol(symbol):
     return chess.Piece.from_symbol(symbol).piece_type
 
+def get_finished(board: chess.Board):
+    if board.outcome() is None:
+        return False
+    
+    # While the game only considers checkmate and stalemate, we need this additional check.
+    # If all end games are implemented, this check is not necessary because the presence of an outcome
+    # object is enough to know that the game has ended
+    return board.is_checkmate() or board.is_stalemate()
+
+def get_finished_reason(board: chess.Board):
+    if board.outcome() is None:
+        return ""
+    
+    if board.is_checkmate():
+        return "Checkmate"
+    if board.is_stalemate():
+        return "Stalemate"
+    
+def get_winner(board: chess.Board):
+    if (outcome := board.outcome()) is None:
+        return -1
+    
+    return outcome.winner
+
+def get_missing_player(board):
+    if chess.WHITE not in board.am_active_players:
+        return chess.WHITE
+    if chess.BLACK not in board.am_active_players:
+        return chess.BLACK
+    raise RuntimeError
+
+def get_full(board):
+    return len(board.am_active_players) == 2
+
 def generate_join_key():
     success = False
 
@@ -53,8 +90,22 @@ def generate_join_key():
 async def bad_request(websocket):
     await websocket.send(json.dumps({
         "type": "bad request",
-        "urlBad": URL_404,
-        "urlDisconnected": "/"
+        "url": URL_404
+    }))
+
+async def invalid_url(websocket):
+    await websocket.send(json.dumps({
+        "type": "invalid url",
+        "message": "You entered an invalid url... Redirecting to the home menu",
+        "url": "/"
+    }))
+
+async def opponent_left_during_disconnect(websocket):
+    await websocket.send(json.dumps({
+        "type": "reconnecting",
+        "success": False,
+        "message": "There is nobody in this game",
+        "url": "/"
     }))
 
 async def error(websocket, message):
@@ -71,7 +122,8 @@ async def play(websocket, board: chess.Board, player, connected):
         except websockets.ConnectionClosed:
             websockets.broadcast(connected, json.dumps({
                 "type": "opponent disconnected",
-                "url": "/"
+                "board": board.board_fen(),
+                "finished": get_finished(board)
             }))
             break
         
@@ -152,11 +204,24 @@ async def play(websocket, board: chess.Board, player, connected):
             }))
 
             # End game conditions
+            # Can be generalised to:
+            '''
+            outcome = board.outcome()
+            if outcome is not None:
+                websockets.broadcast(connected, json.dumps({
+                    "type": "end",
+                    "reason": <function to convert outcome.termination (enum) to string>,
+                    "winner: outcome.winner
+                }))
+            '''
+
+            # For now we only consider checkmate and stalemate
             if board.is_checkmate():
                 websockets.broadcast(connected, json.dumps({
                     "type": "win",
-                    "winner": board.outcome().winner
+                    "winner": get_winner(board)
                 }))
+
             elif board.is_stalemate():
                 websockets.broadcast(connected, json.dumps({
                     "type": "draw",
@@ -169,9 +234,11 @@ async def play(websocket, board: chess.Board, player, connected):
                 "board": board.board_fen()
             }))
 
-async def start(websocket):
+async def new(websocket):
     board = chess.Board()
-    connected = {websocket}
+    # Adding custom variables to keep track of the current white and black players
+    board.am_active_players = []
+    connected = set()
 
     try:
         join_key = generate_join_key()
@@ -180,58 +247,97 @@ async def start(websocket):
         return
 
     Boards[join_key] = board, connected
+    await websocket.send(json.dumps({
+        "type": "new",
+        "url": get_join_url(join_key)
+    }))
 
-    player = chess.WHITE
+async def join(websocket, join_key, reconnecting):
+    join_key = join_key.upper()
+    try:
+        board, connected = Boards[join_key]
+    except KeyError:
+        if not reconnecting:
+            await bad_request(websocket)
+        else:
+            await opponent_left_during_disconnect(websocket)
+        return
+    
+    if reconnecting and len(connected) == 0:
+        await opponent_left_during_disconnect(websocket)
+        return
+    
+    if len(connected) >= 2:
+        if reconnecting:
+            await websocket.send(json.dumps({
+                "type": "reconnecting",
+                "success": False,
+                "message": "Someone else has filled your place while you were gone",
+                "url": "/"
+            }))
+        else:
+            await websocket.send(json.dumps({
+                "type": "full",
+                "message": "There are already two players in this game",
+                "url": "/"
+            })) # redirect request as "watch"
+        return
+    connected.add(websocket)
 
+    try:
+        player = get_missing_player(board)
+        board.am_active_players.append(player)
+    except:
+        # The previous check 'len(connected) >= 2' should mean we never reach this line
+        print("There is already a white and black player in this game")
+        return
+    
     try:
         await websocket.send(json.dumps({
             "type": "init",
             "join": join_key,
             "board": board.board_fen(),
             "player": player,
-            "turn": board.turn
-        }))
-        await play(websocket, board, player, connected)
-    finally:
-        del Boards[join_key]
-
-async def join(websocket, join_key):
-    try:
-        board, connected = Boards[join_key.upper()]
-    except KeyError:
-        await bad_request(websocket)
-        return
-    
-    if len(connected) >= 2:
-        await error(websocket, "The game already has two players") # redirect request as "watch"
-        return
-    
-    connected.add(websocket)
-    player = chess.BLACK
-    try:
-        await websocket.send(json.dumps({
-            "type": "init",
-            "board": board.board_fen(),
-            "player": player,
-            "turn": board.turn
+            "turn": board.turn,
+            "finished": get_finished(board),
+            "finished reason": get_finished_reason(board),
+            "winner": get_winner(board)
         }))
         websockets.broadcast(connected, json.dumps({
             "type": "player joined",
-            "board": board.board_fen()
+            "board": board.board_fen(),
+            "full": get_full(board)
         }))
+        
+        if reconnecting:
+            await websocket.send(json.dumps({
+                "type": "reconnecting",
+                "success": True,
+                "message": "You have successfully rejoined the game"
+            }))
+
         await play(websocket, board, player, connected)
     finally:
         connected.remove(websocket)
+        board.am_active_players.remove(player)
+        if len(connected) == 0:
+            # Add a delay here in case a user is refreshing the page, instead of deleting the game immediately
+            await asyncio.sleep(5)
+            if len(connected) == 0:
+                del Boards[join_key]
 
 async def handler(websocket):
     message = await websocket.recv()
     event = json.loads(message)
-    assert event["type"] == "init"
+    assert event["type"] == "new" or event["type"] == "init"
 
-    if "join" in event:
-        await join(websocket, event["join"])
+    if event["type"] == "new":
+        await new(websocket)
+    elif "join" in event:
+        reconnecting = False if "reconnecting" not in event else event["reconnecting"]
+        await join(websocket, event["join"], reconnecting)
     else:
-        await start(websocket)
+        await invalid_url(websocket)
 
 async def main():
     async with websockets.serve(handler, "", 8001):

@@ -11,8 +11,13 @@ body {
     height: var(--app-height);
 }
 
+a {
+    text-decoration: none;
+}
+
 h1 {
     margin-top: 30px;
+    color: black;
 }
 
 main {
@@ -62,7 +67,7 @@ main > div > * {
     margin: 10px 0;
 }
 
-button, a {
+main button, main a {
     background-color: cornflowerblue;
     color: white;
     font-family: Arial, Helvetica, sans-serif;
@@ -87,10 +92,7 @@ button:hover {
     width: 30%;
     font-size: larger;
     text-transform: uppercase;
-}
-
-#ExistingGameContainer > form > button {
-    margin-left: 10px;
+    margin: 0 10px;
 }
 
 #not-existing-prompt {
