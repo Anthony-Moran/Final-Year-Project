@@ -1,7 +1,16 @@
 import * as game from "./game.js";
-const websocket_address = `ws://${window.location.hostname}:8001/`
 
 let resize_timeout;
+
+function getWebSocketServer() {
+    if (window.location.host === "Anthony-Moran.github.io") {
+        return "wss://am-fyp.herokuapp.com/";
+    } else if (window.location.host === "localhost:8000") {
+        return "ws://localhost:8001/";
+    } else {
+        throw new Error(`Unsupported host: ${window.location.host}`);
+    }
+}
 
 function init(websocket) {
     websocket.addEventListener("open", () => {
@@ -153,7 +162,7 @@ function close_websocket(websocket) {
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    const websocket = new WebSocket(websocket_address);
+    const websocket = new WebSocket(getWebSocketServer());
     init(websocket);
     sendHandler(websocket);
     receiveHandler(websocket);
