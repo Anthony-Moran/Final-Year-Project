@@ -266,10 +266,6 @@ async def join(websocket, join_key, reconnecting):
             await opponent_left_during_disconnect(websocket)
         return
     
-    if reconnecting and len(connected) == 0:
-        await opponent_left_during_disconnect(websocket)
-        return
-    
     if len(connected) >= 2:
         if reconnecting:
             await websocket.send(json.dumps({
@@ -295,28 +291,29 @@ async def join(websocket, join_key, reconnecting):
         print("There is already a white and black player in this game")
         return
     
-    try:
-        await websocket.send(json.dumps({
-            "type": "init",
-            "join": join_key,
-            "board": board.board_fen(),
-            "player": player,
-            "turn": board.turn,
-            "finished": get_finished(board),
-            "finished reason": get_finished_reason(board),
-            "winner": get_winner(board)
-        }))
-        websockets.broadcast(connected, json.dumps({
-            "type": "player joined",
-            "board": board.board_fen(),
-            "full": get_full(board)
-        }))
-        
+    try:        
         if reconnecting:
             await websocket.send(json.dumps({
                 "type": "reconnecting",
                 "success": True,
-                "message": "You have successfully rejoined the game"
+                "join": join_key
+            }))
+        else:
+            await websocket.send(json.dumps({
+                "type": "init",
+                "join": join_key,
+                "board": board.board_fen(),
+                "player": player,
+                "turn": board.turn,
+                "check": board.is_check(),
+                "finished": get_finished(board),
+                "finished reason": get_finished_reason(board),
+                "winner": get_winner(board)
+            }))
+            websockets.broadcast(connected, json.dumps({
+                "type": "player joined",
+                "board": board.board_fen(),
+                "full": get_full(board)
             }))
 
         await play(websocket, board, player, connected)

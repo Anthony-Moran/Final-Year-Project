@@ -10,6 +10,10 @@ const join_link_element = document.querySelector("#join-link");
 const join_code_element = document.querySelector("#join-code-text");
 join_text_element.style.display = "none"
 
+const main = document.querySelector("main");
+const reconnect_link = document.querySelector("#reconnect-link");
+const no_server_text = document.querySelector("#no-server-text");
+
 const promotion_panel = document.querySelector("#PromotionPanel");
 
 const pp_pieces = document.querySelectorAll(".pp-piece");
@@ -61,11 +65,11 @@ export function pp_click(callback) {
     })
 }
 
-export function init(fen, given_player, given_turn, join_key, finished, finished_reason, winner) {
+export function init(fen, given_player, given_turn, join_key, check, finished, finished_reason, winner) {
     // This needs to go first because the presence of the link will affect the size of the canvas element
     if (!finished) {
         init_join_text(join_key);
-        update_turn(given_turn);
+        update_turn(given_turn, check);
     } else {
         if (finished_reason == "Checkmate") {
             display_winner(winner);
@@ -461,4 +465,15 @@ export function opponent_disconnected(finished, board) {
     }
 
     show_join_text(board);
+}
+
+export function reconnect(join_key) {
+    main.remove()
+    reconnect_link.href += join_key;
+    reconnect_link.style.display = "block"
+}
+
+export function no_server() {
+    prompt.style.display = "none";
+    no_server_text.style.display = "block";
 }
