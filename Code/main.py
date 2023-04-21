@@ -1,133 +1,348 @@
-import itertools
+import asyncio
+import websockets
+import json
+import random
+from string import ascii_uppercase, digits
 
-from flask import Flask, render_template, make_response, request, redirect
-from flask_restful import Api, Resource, reqparse
+import chess
+Boards = {}
 
-from chess_engine import game_state, Piece, Player
+JOIN_KEY_LENGTH = 4
+POTENTIAL_KEY_CHARACTERS = ascii_uppercase+digits
 
-app = Flask(__name__)
-api = Api(app)
+URL_404 = "/?badRequest=true"
 
+def get_join_url(join_key):
+    return f"/chess.html?join={join_key}"
 
-class MetaState(game_state):
-    def __init__(self, player_1=None):
-        super().__init__()
-        self.white_player = player_1
-        self.black_player = None
+def map_squarename_to_validmove(board, square_name):
+    square = chess.parse_square(square_name)
+    piece = board.piece_at(square)
+    piece = piece.symbol() if piece is not None else ""
+    return (square, piece)
 
-    def add_player(self, player):
-        if self.white_player is None:
-            self.white_player = player
-        elif self.black_player is None and self.white_player != player:
-            self.black_player = player
-        else:
-            raise AssertionError
+def get_valid_moves_from(board, index):
+    name = chess.square_name(index)
 
+    valid_squares = []
+    for move in map(lambda x: str(x), board.legal_moves):
+        if move[:2] != name:
+            continue
+        valid_squares.append(move[2:4])
+    return list(map(lambda x: map_squarename_to_validmove(board, x), valid_squares))
 
-states = {}
+def get_piece_from_square(board, square):
+    piece = board.piece_at(square)
+    return piece.symbol() if piece is not None else ""
 
-def get_new_state_id():
-    num = 0
-    while num in states.keys():
-        num += 1
-    return num
+def get_piecetype_from_symbol(symbol):
+    return chess.Piece.from_symbol(symbol).piece_type
 
-class Index(Resource):
-    def get(self):
-        headers = {"Content-Type": "text/html"}
-        return make_response(render_template("index.html"), 200, headers)
+def get_finished(board: chess.Board):
+    if board.outcome() is None:
+        return False
     
+    # While the game only considers checkmate and stalemate, we need this additional check.
+    # If all end games are implemented, this check is not necessary because the presence of an outcome
+    # object is enough to know that the game has ended
+    return board.is_checkmate() or board.is_stalemate()
 
-class NewGame(Resource):
-    def get(self):
-        state_id = get_new_state_id()
-        states[state_id] = MetaState()
-        return redirect(f"chess/{state_id}")
+def get_finished_reason(board: chess.Board):
+    if board.outcome() is None:
+        return ""
     
+    if board.is_checkmate():
+        return "Checkmate"
+    if board.is_stalemate():
+        return "Stalemate"
     
-class ExistingGame(Resource):
-    def post(self):
-        parser = reqparse.RequestParser()
-        parser.add_argument("GameID", required=True, type=int, location="form")
-        args = parser.parse_args()
+def get_winner(board: chess.Board):
+    if (outcome := board.outcome()) is None:
+        return -1
+    
+    return outcome.winner
 
-        state_id = args.get("GameID")
+def get_missing_player(board):
+    if chess.WHITE not in board.am_active_players:
+        return chess.WHITE
+    if chess.BLACK not in board.am_active_players:
+        return chess.BLACK
+    raise RuntimeError
 
-        if state_id not in states.keys():
-            return make_response(render_template("chess404.html"), 404, {"Content-Type": "text/html"})
+def get_full(board):
+    return len(board.am_active_players) == 2
+
+def generate_join_key():
+    success = False
+
+    for _ in range(1000):
+        key = "".join(random.choice(POTENTIAL_KEY_CHARACTERS) for _ in range(JOIN_KEY_LENGTH))
+    
+        if key not in Boards.keys():
+            success = True
+            break
+
+    if not success:
+        raise RuntimeError
+    else:
+        return key
+    
+async def bad_request(websocket):
+    await websocket.send(json.dumps({
+        "type": "bad request",
+        "url": URL_404
+    }))
+
+async def invalid_url(websocket):
+    await websocket.send(json.dumps({
+        "type": "invalid url",
+        "message": "You entered an invalid url... Redirecting to the home menu",
+        "url": "/"
+    }))
+
+async def opponent_left_during_disconnect(websocket):
+    await websocket.send(json.dumps({
+        "type": "reconnecting",
+        "success": False,
+        "message": "There is nobody in this game",
+        "url": "/"
+    }))
+
+async def error(websocket, message):
+    event = {
+        "type": "error",
+        "message": message,
+    }
+    await websocket.send(json.dumps(event))
+
+async def play(websocket, board: chess.Board, player, connected):
+    while True:
+        try:
+            message = await websocket.recv()
+        except websockets.ConnectionClosed:
+            websockets.broadcast(connected, json.dumps({
+                "type": "opponent disconnected",
+                "board": board.board_fen(),
+                "finished": get_finished(board)
+            }))
+            break
         
-        return redirect(f"chess/{state_id}")
-    
+        event = json.loads(message)
 
-class Chess(Resource):
-    def get(self, state_id):
-        headers = {"Content-Type": "text/html"}
+        if event["type"] == "select" or event["type"] == "play":
+            if event["player"] == chess.WHITE and not board.turn or\
+            event["player"] == chess.BLACK and board.turn:
+                await error(websocket, "It is not your turn yet")
+                continue
 
-        if state_id not in states:
-            return make_response(render_template("chess404.html"), 404, {"Content-Type": "text/html"})
+        if event["type"] == "select":
+            available_moves = get_valid_moves_from(board, event["square"])
+
+            await websocket.send(json.dumps({
+                "type": "select",
+                "square": event["square"],
+                "piece": get_piece_from_square(board, event["square"]),
+                "available moves": available_moves
+            }))
+
+        if event["type"] == "play":
+            move = chess.Move(event["start square"], event["end square"]) # Will have to add edge case for promotion and castling and en pessant
+            piece = get_piece_from_square(board, event["start square"])
+            end_piece = piece
+            new_piece_rank = move.uci()[3]
+            
+            if (board.is_castling(move)):
+                king_file, king_rank = move.uci()[2:4]
+
+                old_castle_file = "a" if king_file == "c" else "h"
+                new_castle_file = "d" if king_file == "c" else "f"
+                castle_rank = king_rank
+                castle_symbol = "R" if int(castle_rank) == 1 else "r"
+
+                old_castle_uci = old_castle_file+castle_rank
+                new_castle_uci = new_castle_file+castle_rank
+                old_castle_square_index = chess.parse_square(old_castle_uci)
+                new_castle_square_index = chess.parse_square(new_castle_uci)
+
+                websockets.broadcast(connected, json.dumps({
+                    "type": "play",
+                    "start": (old_castle_square_index, castle_symbol),
+                    "end square": new_castle_square_index
+                }))
+
+            elif (board.is_en_passant(move)):
+                attacking_file, attacking_rank = move.uci()[2:4]
+                defending_file = attacking_file
+                defending_rank = "4" if attacking_rank == "3" else "5"
+
+                defending_uci = defending_file+defending_rank
+                defending_square_index = chess.parse_square(defending_uci)
+
+                websockets.broadcast(connected, json.dumps({
+                    "type": "clear",
+                    "piece": defending_square_index
+                }))
+
+            elif (piece.lower() == "p" and (int(new_piece_rank) == 1 or int(new_piece_rank) == 8)):
+                await websocket.send(json.dumps({
+                    "type": "promotion"
+                }))
+
+                promotion_message = await websocket.recv()
+                promotion_event = json.loads(promotion_message)
+
+                end_piece = promotion_event["piece"]
+                move.promotion = get_piecetype_from_symbol(end_piece)
+            
+            board.push(move)
+            websockets.broadcast(connected, json.dumps({
+                "type": "play",
+                "start square": event["start square"],
+                "end square": event["end square"],
+                "piece": end_piece,
+                "check": board.is_check()
+            }))
+
+            # End game conditions
+            # Can be generalised to:
+            '''
+            outcome = board.outcome()
+            if outcome is not None:
+                websockets.broadcast(connected, json.dumps({
+                    "type": "end",
+                    "reason": <function to convert outcome.termination (enum) to string>,
+                    "winner: outcome.winner
+                }))
+            '''
+
+            # For now we only consider checkmate and stalemate
+            if board.is_checkmate():
+                websockets.broadcast(connected, json.dumps({
+                    "type": "win",
+                    "winner": get_winner(board)
+                }))
+
+            elif board.is_stalemate():
+                websockets.broadcast(connected, json.dumps({
+                    "type": "draw",
+                    "reason": "stalemate"
+                }))
+        
+        if event["type"] == "resize":
+            await websocket.send(json.dumps({
+                "type": "resize",
+                "board": board.board_fen()
+            }))
+
+async def new(websocket):
+    board = chess.Board()
+    # Adding custom variables to keep track of the current white and black players
+    board.am_active_players = []
+    connected = set()
+
+    try:
+        join_key = generate_join_key()
+    except RuntimeError:
+        error(websocket, "Could not generate a unique key for this game, please try again")
+        return
+
+    Boards[join_key] = board, connected
+    await websocket.send(json.dumps({
+        "type": "new",
+        "url": get_join_url(join_key)
+    }))
+
+async def join(websocket, join_key, reconnecting):
+    join_key = join_key.upper()
+    try:
+        board, connected = Boards[join_key]
+    except KeyError:
+        if not reconnecting:
+            await bad_request(websocket)
         else:
-            state = states[state_id]
-            try:
-                state.add_player(request.remote_addr)
-            except AssertionError:
-                print("Player attempting to join the same game or game is full")
+            await opponent_left_during_disconnect(websocket)
+        return
+    
+    if reconnecting and len(connected) == 0:
+        await opponent_left_during_disconnect(websocket)
+        return
+    
+    if len(connected) >= 2:
+        if reconnecting:
+            await websocket.send(json.dumps({
+                "type": "reconnecting",
+                "success": False,
+                "message": "Someone else has filled your place while you were gone",
+                "url": "/"
+            }))
+        else:
+            await websocket.send(json.dumps({
+                "type": "full",
+                "message": "There are already two players in this game",
+                "url": "/"
+            })) # redirect request as "watch"
+        return
+    connected.add(websocket)
 
-        return make_response(render_template("chess.html"), 200, headers)
+    try:
+        player = get_missing_player(board)
+        board.am_active_players.append(player)
+    except:
+        # The previous check 'len(connected) >= 2' should mean we never reach this line
+        print("There is already a white and black player in this game")
+        return
+    
+    try:
+        await websocket.send(json.dumps({
+            "type": "init",
+            "join": join_key,
+            "board": board.board_fen(),
+            "player": player,
+            "turn": board.turn,
+            "finished": get_finished(board),
+            "finished reason": get_finished_reason(board),
+            "winner": get_winner(board)
+        }))
+        websockets.broadcast(connected, json.dumps({
+            "type": "player joined",
+            "board": board.board_fen(),
+            "full": get_full(board)
+        }))
+        
+        if reconnecting:
+            await websocket.send(json.dumps({
+                "type": "reconnecting",
+                "success": True,
+                "message": "You have successfully rejoined the game"
+            }))
 
+        await play(websocket, board, player, connected)
+    finally:
+        connected.remove(websocket)
+        board.am_active_players.remove(player)
+        if len(connected) == 0:
+            # Add a delay here in case a user is refreshing the page, instead of deleting the game immediately
+            await asyncio.sleep(5)
+            if len(connected) == 0:
+                del Boards[join_key]
 
-class Board(Resource):
-    def get(self, state_id):
-        if state_id not in states.keys():
-            return make_response("Error: No state to get board from", 404)
+async def handler(websocket):
+    message = await websocket.recv()
+    event = json.loads(message)
+    assert event["type"] == "new" or event["type"] == "init"
 
-        state = states[state_id]
+    if event["type"] == "new":
+        await new(websocket)
+    elif "join" in event:
+        reconnecting = False if "reconnecting" not in event else event["reconnecting"]
+        await join(websocket, event["join"], reconnecting)
+    else:
+        await invalid_url(websocket)
 
-        ascii_board = list(itertools.chain(*state.board))
-        ascii_board = list(map(lambda piece: f"{piece.get_name()} {piece.get_player()}" if issubclass(type(piece), Piece) else ' ', ascii_board))
-        return {
-            'turn': not state.white_turn,
-            'state': state.checkmate_stalemate_checker(),
-            'check': state._is_check,
-            'board': ascii_board
-        }
-
-    def put(self, state_id):
-        if state_id not in states.keys():
-            return make_response("Error: No state to get board from", 404)
-        state: MetaState = states[state_id]
-
-        if state.white_turn and request.remote_addr != state.white_player\
-                or not state.white_turn and request.remote_addr != state.black_player:
-            return make_response("It is not your turn", 400)
-
-        json: dict = request.get_json()
-        index = json["index"]
-        starting_square = (index // 8, index % 8)
-
-        piece: Piece = state.get_piece(starting_square[0], starting_square[1])
-        if piece.get_player() == Player.PLAYER_1 and request.remote_addr != state.white_player\
-                or piece.get_player() == Player.PLAYER_2 and request.remote_addr != state.black_player:
-            return make_response("These are not one of your pieces", 400)
-
-        indexMove = json.get('indexMove')
-        if indexMove is None:
-            valid_moves = state.get_valid_moves(starting_square)
-            return valid_moves
-
-        ending_square = (indexMove // 8, indexMove % 8)
-        state.move_piece(starting_square, ending_square, False)
-
-        return state.checkmate_stalemate_checker()
-
-
-def main():
-    api.add_resource(Index, "/")
-    api.add_resource(NewGame, "/new")
-    api.add_resource(ExistingGame, "/existing")
-    api.add_resource(Chess, "/chess/<int:state_id>")
-    api.add_resource(Board, "/board/<int:state_id>")
-    app.run(host='0.0.0.0', port='8000', debug=True)
+async def main():
+    async with websockets.serve(handler, "", 8001):
+        await asyncio.Future()
 
 
 if __name__ == "__main__":
-    main()
+    asyncio.run(main())

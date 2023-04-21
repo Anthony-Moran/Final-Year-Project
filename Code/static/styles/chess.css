@@ -5,30 +5,26 @@
     text-align: center;
 }
 
+html {
+    background-color: white;
+
+    width: 100vw;
+    height: 100vh;
+}
+
 body {
     margin: auto;
 
     display: flex;
     flex-direction: column;
 
-    width: 100vw;
-    height: 100vh;
-}
+    width: 100%;
+    height: 100%;
 
-main {
-    margin: auto;
-    padding: 2vmin;
-
-    flex: 1 1 0;
-    width: 100vmin;
-    height: 100vmin;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
+    background-color: burlywood;
 }
 
 nav {
-    background-color: lightgrey;
     width: 100vw;
     height: 5vmin;
 
@@ -37,31 +33,63 @@ nav {
     align-items: center;
 
     border-radius: 0 0 20px 20px;
+    border-bottom: 1px solid black;
     padding: 30px;
 }
 
-nav > a {
+h1 {
+    font-size: 20pt;
+}
+
+nav a {
     text-decoration: none;
     color: black;
-    font-size: large;
 }
 
 nav > a:hover {
     font-weight: bold;
 }
 
-#CanvasContainer {
-    position: relative;
-    flex-grow: 1;
+main {
+    font-size: 0;
+    margin: auto;
+    padding: 2vmin;
+
+    flex: 1 1 0;
     width: 100%;
-    min-width: 200px;
-    min-height: 200px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
-canvas {
-    border: 2px solid #222;
+main > .text {
+    font-size: 12pt;
+    margin-bottom: 1%;
+    font-size: 15pt;
+    border-radius: 15px;
+}
+
+#CanvasContainer {
+    width: 100%;
+    flex: 1 1 0;
+}
+
+#ChessBoard {
     position: absolute;
     margin: auto;
     left: 0;
     right: 0;
+}
+
+#PromotionPanel {
+    background-color: #515151;
+    position: absolute;
+    margin: auto;
+    left: 0;
+    right: 0;
+}
+
+.pp-piece {
+    background-color: grey;
+    position: absolute;
 }

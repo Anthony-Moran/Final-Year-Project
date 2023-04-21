@@ -2,12 +2,6 @@
     --app-height: 100%;
 }
 
-* {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-}
-
 body {
     display: flex;
     flex-direction: column;
@@ -17,8 +11,13 @@ body {
     height: var(--app-height);
 }
 
+a {
+    text-decoration: none;
+}
+
 h1 {
     margin-top: 30px;
+    color: black;
 }
 
 main {
@@ -68,24 +67,36 @@ main > div > * {
     margin: 10px 0;
 }
 
-button {
+main button, main a {
     background-color: cornflowerblue;
     color: white;
+    font-family: Arial, Helvetica, sans-serif;
     font-size: medium;
     border-radius: 5px;
     border: 2px solid white;
     padding: 6px 12px;
+    text-decoration: none;
 }
 
 button:hover {
     background-color:deepskyblue;
 }
 
-#ExistingGameContainer > form > button {
-    margin-left: 10px;
+#ExistingGameContainer > form {
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-#GameID {
-    width: 15%;
-    border: 1px solid black;
+#join-input {
+    width: 30%;
+    font-size: larger;
+    text-transform: uppercase;
+    margin: 0 10px;
+}
+
+#not-existing-prompt {
+    color: crimson;
+    margin-top: 0;
+    display: none;
 }

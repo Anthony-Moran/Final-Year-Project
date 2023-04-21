@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../static/styles/chess.css">
+    <title>Am Chess</title>
+</head>
+<body>
+    <nav><h1><a href="/">AM Chess</a></h1></nav>
+    <main>
+        <div class="text">
+            <b id="Prompt">Turn</b>
+            <div id="join-text">Join with <a id="join-link" href="">Link</a> or Code: <p id="join-code-text"></p></div>
+        </div>
+        <div id="CanvasContainer">
+            <canvas id="ChessBoard"></canvas>
+            <div id="PromotionPanel" style="display:none">
+                <canvas id="pp_queen" class="pp-piece"></canvas>
+                <canvas id="pp_rook" class="pp-piece"></canvas>
+                <canvas id="pp_knight" class="pp-piece"></canvas>
+                <canvas id="pp_bishop" class="pp-piece"></canvas>
+            </div>
+        </div>
+    </main>
+    <img id="ImagePieces" src="../static/images/pieces.png" style="display: none">
+    <script type="module" src="../static/scripts/chess.js"></script>
+</body>
+</html>
