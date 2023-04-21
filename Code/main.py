@@ -4,6 +4,9 @@ import json
 import random
 from string import ascii_uppercase, digits
 
+import os
+import signal
+
 import chess
 Boards = {}
 
@@ -340,8 +343,13 @@ async def handler(websocket):
         await invalid_url(websocket)
 
 async def main():
-    async with websockets.serve(handler, "", 8001):
-        await asyncio.Future()
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    port = int(os.environ.get("PORT", 8001))
+    async with websockets.serve(handler, "", port):
+        await stop
 
 
 if __name__ == "__main__":
