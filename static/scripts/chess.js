@@ -3,7 +3,7 @@ import * as game from "./game.js";
 let resize_timeout;
 
 function getWebSocketServer() {
-    if (window.location.host === "Anthony-Moran.github.io") {
+    if (window.location.host === "anthony-moran.github.io") {
         return "wss://am-fyp.herokuapp.com/";
     } else if (window.location.host === "localhost:8000") {
         return "ws://localhost:8001/";
