@@ -6,7 +6,7 @@ function getWebSocketServer() {
     if (window.location.host === "anthony-moran.github.io") {
         return "wss://am-fyp.herokuapp.com/";
     } else if (window.location.host === "192.168.0.12:8000") {
-        return "ws://localhost:8001/";
+        return "ws://192.168.0.12:8001/";
     } else {
         throw new Error(`Unsupported host: ${window.location.host}`);
     }
@@ -113,7 +113,7 @@ function receiveHandler(websocket) {
                 game.clear(event.piece);
                 break;
             case "opponent disconnected":
-                game.opponent_disconnected(event.board);
+                game.opponent_disconnected(event.finished, event.board);
                 break;
             case "reconnecting":
                 alert(event.message);
