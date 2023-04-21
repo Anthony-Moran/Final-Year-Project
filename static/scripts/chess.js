@@ -83,6 +83,7 @@ function receiveHandler(websocket) {
         switch (event.type) {
             case "new":
                 close_websocket(websocket);
+                console.log(event.url);
                 window.location.replace(event.url);
                 break;
             case "init":
