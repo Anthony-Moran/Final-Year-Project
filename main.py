@@ -13,10 +13,10 @@ Boards = {}
 JOIN_KEY_LENGTH = 4
 POTENTIAL_KEY_CHARACTERS = ascii_uppercase+digits
 
-URL_404 = "/?badRequest=true"
+URL_404 = "./?badRequest=true"
 
 def get_join_url(join_key):
-    return f"/chess.html?join={join_key}"
+    return f"./chess.html?join={join_key}"
 
 def map_squarename_to_validmove(board, square_name):
     square = chess.parse_square(square_name)
@@ -100,7 +100,7 @@ async def invalid_url(websocket):
     await websocket.send(json.dumps({
         "type": "invalid url",
         "message": "You entered an invalid url... Redirecting to the home menu",
-        "url": "/"
+        "url": "./"
     }))
 
 async def opponent_left_during_disconnect(websocket):
@@ -108,7 +108,7 @@ async def opponent_left_during_disconnect(websocket):
         "type": "reconnecting",
         "success": False,
         "message": "There is nobody in this game",
-        "url": "/"
+        "url": "./"
     }))
 
 async def error(websocket, message):
@@ -276,13 +276,13 @@ async def join(websocket, join_key, reconnecting):
                 "type": "reconnecting",
                 "success": False,
                 "message": "Someone else has filled your place while you were gone",
-                "url": "/"
+                "url": "./"
             }))
         else:
             await websocket.send(json.dumps({
                 "type": "full",
                 "message": "There are already two players in this game",
-                "url": "/"
+                "url": "./"
             })) # redirect request as "watch"
         return
     connected.add(websocket)
