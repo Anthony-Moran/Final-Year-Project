@@ -1,7 +1,16 @@
 import * as game from "./game.js";
-const websocket_address = `ws://${window.location.hostname}:8001/`
 
 let resize_timeout;
+
+function getWebSocketServer() {
+    if (window.location.host === "anthony-moran.github.io") {
+        return "wss://am-fyp.herokuapp.com/";
+    } else if (window.location.host === "192.168.0.12:8000") {
+        return "ws://192.168.0.12:8001/";
+    } else {
+        throw new Error(`Unsupported host: ${window.location.host}`);
+    }
+}
 
 function init(websocket) {
     websocket.addEventListener("open", () => {
@@ -21,6 +30,8 @@ function init(websocket) {
         }
 
         websocket.send(JSON.stringify(event));
+        websocket.removeEventListener("close", alertNoServer);
+        websocket.addEventListener("close", alertBrokenConnection);
     });
 }
 
@@ -74,11 +85,12 @@ function receiveHandler(websocket) {
         switch (event.type) {
             case "new":
                 close_websocket(websocket);
+                console.log(event.url);
                 window.location.replace(event.url);
                 break;
             case "init":
                 game.init(event.board, event.player, event.turn, event.join,
-                    event.finished, event["finished reason"], event.winner);
+                    event.check, event.finished, event["finished reason"], event.winner);
                 break;
             case "select":
                 game.select([event.square, event.piece], event["available moves"]);
@@ -103,13 +115,15 @@ function receiveHandler(websocket) {
                 game.clear(event.piece);
                 break;
             case "opponent disconnected":
-                game.opponent_disconnected(event.board);
+                game.opponent_disconnected(event.finished, event.board);
                 break;
             case "reconnecting":
-                alert(event.message);
                 if (!event.success) {
+                    alert(event.message);
                     close_websocket(websocket);
                     window.location.replace(event.url);
+                } else {
+                    game.reconnect(event.join);
                 }
                 break;
             case "resize":
@@ -136,24 +150,36 @@ function receiveHandler(websocket) {
     });
 }
 
+function alertNoServer() {
+    game.no_server();
+    setTimeout(() => {
+        window.location.replace("./")
+    }, 3000);
+}
+
 function connectionHandler(websocket) {
-    websocket.addEventListener("close", alertBrokenConnection);
+    websocket.addEventListener("close", alertNoServer);
 }
 
 function alertBrokenConnection() {
     alert("The connection to the server was broken...");
     const params = new URLSearchParams(window.location.search);
+    if (params.get("reconnecting")) {
+        window.location.replace("./");
+        return;
+    }
     params.append('reconnecting', true);
     window.location.search = params.toString();
 }
 
 function close_websocket(websocket) {
     websocket.removeEventListener("close", alertBrokenConnection);
+    console.log("closing websocket without triggering other event")
     websocket.close()
 }
 
 window.addEventListener('DOMContentLoaded', () => {
-    const websocket = new WebSocket(websocket_address);
+    const websocket = new WebSocket(getWebSocketServer());
     init(websocket);
     sendHandler(websocket);
     receiveHandler(websocket);

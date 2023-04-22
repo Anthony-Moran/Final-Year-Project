@@ -4,16 +4,19 @@ import json
 import random
 from string import ascii_uppercase, digits
 
+import os
+import signal
+
 import chess
 Boards = {}
 
 JOIN_KEY_LENGTH = 4
 POTENTIAL_KEY_CHARACTERS = ascii_uppercase+digits
 
-URL_404 = "/?badRequest=true"
+URL_404 = "./?badRequest=true"
 
 def get_join_url(join_key):
-    return f"/chess.html?join={join_key}"
+    return f"./chess.html?join={join_key}"
 
 def map_squarename_to_validmove(board, square_name):
     square = chess.parse_square(square_name)
@@ -97,7 +100,7 @@ async def invalid_url(websocket):
     await websocket.send(json.dumps({
         "type": "invalid url",
         "message": "You entered an invalid url... Redirecting to the home menu",
-        "url": "/"
+        "url": "./"
     }))
 
 async def opponent_left_during_disconnect(websocket):
@@ -105,7 +108,7 @@ async def opponent_left_during_disconnect(websocket):
         "type": "reconnecting",
         "success": False,
         "message": "There is nobody in this game",
-        "url": "/"
+        "url": "./"
     }))
 
 async def error(websocket, message):
@@ -166,8 +169,9 @@ async def play(websocket, board: chess.Board, player, connected):
 
                 websockets.broadcast(connected, json.dumps({
                     "type": "play",
-                    "start": (old_castle_square_index, castle_symbol),
-                    "end square": new_castle_square_index
+                    "start square": (old_castle_square_index, castle_symbol),
+                    "end square": new_castle_square_index,
+                    "piece": 
                 }))
 
             elif (board.is_en_passant(move)):
@@ -263,23 +267,19 @@ async def join(websocket, join_key, reconnecting):
             await opponent_left_during_disconnect(websocket)
         return
     
-    if reconnecting and len(connected) == 0:
-        await opponent_left_during_disconnect(websocket)
-        return
-    
     if len(connected) >= 2:
         if reconnecting:
             await websocket.send(json.dumps({
                 "type": "reconnecting",
                 "success": False,
                 "message": "Someone else has filled your place while you were gone",
-                "url": "/"
+                "url": "./"
             }))
         else:
             await websocket.send(json.dumps({
                 "type": "full",
                 "message": "There are already two players in this game",
-                "url": "/"
+                "url": "./"
             })) # redirect request as "watch"
         return
     connected.add(websocket)
@@ -292,28 +292,29 @@ async def join(websocket, join_key, reconnecting):
         print("There is already a white and black player in this game")
         return
     
-    try:
-        await websocket.send(json.dumps({
-            "type": "init",
-            "join": join_key,
-            "board": board.board_fen(),
-            "player": player,
-            "turn": board.turn,
-            "finished": get_finished(board),
-            "finished reason": get_finished_reason(board),
-            "winner": get_winner(board)
-        }))
-        websockets.broadcast(connected, json.dumps({
-            "type": "player joined",
-            "board": board.board_fen(),
-            "full": get_full(board)
-        }))
-        
+    try:        
         if reconnecting:
             await websocket.send(json.dumps({
                 "type": "reconnecting",
                 "success": True,
-                "message": "You have successfully rejoined the game"
+                "join": join_key
+            }))
+        else:
+            await websocket.send(json.dumps({
+                "type": "init",
+                "join": join_key,
+                "board": board.board_fen(),
+                "player": player,
+                "turn": board.turn,
+                "check": board.is_check(),
+                "finished": get_finished(board),
+                "finished reason": get_finished_reason(board),
+                "winner": get_winner(board)
+            }))
+            websockets.broadcast(connected, json.dumps({
+                "type": "player joined",
+                "board": board.board_fen(),
+                "full": get_full(board)
             }))
 
         await play(websocket, board, player, connected)
@@ -340,8 +341,13 @@ async def handler(websocket):
         await invalid_url(websocket)
 
 async def main():
-    async with websockets.serve(handler, "", 8001):
-        await asyncio.Future()
+    loop = asyncio.get_running_loop()
+    stop = loop.create_future()
+    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+
+    port = int(os.environ.get("PORT", 8001))
+    async with websockets.serve(handler, "", port):
+        await stop
 
 
 if __name__ == "__main__":
