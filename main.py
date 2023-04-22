@@ -171,7 +171,7 @@ async def play(websocket, board: chess.Board, player, connected):
                     "type": "play",
                     "start square": (old_castle_square_index, castle_symbol),
                     "end square": new_castle_square_index,
-                    "piece": 
+                    "piece": castle_symbol
                 }))
 
             elif (board.is_en_passant(move)):
