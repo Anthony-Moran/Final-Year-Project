@@ -1,6 +1,7 @@
 \chapter{Methods}
 \label{chapter2}
 
+\section{Version Control}
 All of the code developed for this project has been managed by git and pushed to a github respository with can be accessed by the link:
 
 \begin{center}
@@ -8,32 +9,79 @@ All of the code developed for this project has been managed by git and pushed to
 \end{center}
 
 The history will show the various stages of this project and how we started off with a blank workspace and ended up with this product now.
+When implementing the online features, the commit messages became less detailed because the changes were extremely minor and changes were being made rapidly for debugging the transition from offline to online.
+
+Offline and online version, mention it here but explain more detail will be given in the backend section.
 
 \section{Back End}
 
-Although the front and back end of this project have been worked on simultaneously, we will begin by looking at the process for how we designed the back end first. This is due to the fact that the front end depends on the back end in order to function.
-We have developed the back end using Python 3.10, the Flask framework and the Flask-RESTful extension to allow for a RESTful implementation of the service. These have been chosen for the backend due to expereince and familiarity, and the quality of the code should reflect this. Additionally, the framework abstracts a lot of the processing involved for developing a REST\footnote{REST stands for Representational State Transfer and is an architecture used to define rules for communication over a network} based service, which meant we could focus more on the business logic of the application.
-
-\subsection{Flask/Flask-RESTful}
-
-Before delving into any web service, there is some boilerplate that is required. This can be seen in one of the early commits to this project where I set up an initial connection to the local host and add my first resource, routed to the base URL. For those unfamiliar with flask-RESTful, the way that it functions is by assigning everthing as a resource *referencing may be necessary*. Each resoucrce can be assigned any of the 4 CRUD operations, i.e. Create, Read, Update or Delete, via a POST, GET, PUT and DELETE request respecitvely. The initial resource only features a get request and it returns the index.html file.
+Processing logic on server side to reduce computation on client side and also means there is a single point of truth
 
 \subsection{Chess Logic}
 
-Add some general text about the implementation of the chess logic here
+Mention transition from old chess engine to python-chess. The old version was going to be used when the project started off as machine learning but in the end it wasn't fully implemented so now we are using the built in chess module.
+
+Board is represented using FEN.
+
+\subsection{Game Management}
+
+Storing a tuple of game state and connected users in a dictionary with join key\linebreak
+Generating join keys
+
+\subsection{Python Server}
+
+Offline server, explain how to enact
+
+\subsection{Github Pages}
+
+Online server
+
+\section{Communication}
+
+Network speed - applicable to online version\linebreak
+Consider security\linebreak
+Bad join keys redirect users to home menu
+
+Challenege with matching the backend board with the frontend representation: orientation of pieces vs canvas coordinates
+
+\subsection{Websockets}
+Code was adapted from https://websockets.readthedocs.io/en/stable/\linebreak
+Flawed with short life time and disconnect easily\linebreak
+Pro is that they use bidirectional channel, so polling is no longer required\linebreak
+Iphone will disconnect if locked/leaves safari (added cheap fix to allow reconnection but it's not special to the user, anyone can connect in their place)\linebreak
+Refreshing with one user would cause the game to be deleted because the server would temporarily see that there are no users in the game. And after the page refreshed the user wouldn't be able to join because the game is now deleted. Added a small buffer time to keep the game alive, to combat this.\linebreak
+
+Closed after win because no more messages need to be exchanged.
+
+\subsection{Heroku}
+
+Platform as a service (distirbuted systems?)
+
+Server sleeps after a period of not being used. Causes next request to take a few seconds longer than usual
+
 
 \section{Front End}
 
-Add some general text about the front end here
-
 \subsection{The Welcome Page}
 
-Add some general text about the welcome page here
+Option to start a new game\linebreak
+Alternatively you can enter a code and join an existing game
 
-\subsection{The Main Page}
+Red message appears under user input if they entered an invalid code. Catches the eye and red subconsciously indicates error.
 
-Add some general text about the main page here
+\subsection{The Chess Page}
 
-\subsection{The Error Page}
+Nav bar to return to main menu\linebreak
+Text at the top to show join code and link\linebreak
+Also prompts on who's turn it is and whether user is in check or if the game has finished with the result.\linebreak
+board is drawn with canvas
 
-Add some general text about the error page here
+reference sprite sheet\linebreak
+requires javascript\linebreak
+interaction through mouse click events : converts mouse position to row and column using modolos (check spelling) and integer division\linebreak
+only parts of the board that need updating are updated: only drawing pieces that have moved or been taken, more resource efficient than redrawing the whole board.
+
+\subsection{Responsive Design}
+
+(CSS) Prioritises mobile devices and forces computers to adjust the layout. Computers typically have faster processors than mobile devices.\linebreak
+computer users can resize the window and the design adapts: https://web.archive.org/web/20220714020647/https://bencentra.com/code/2015/02/27/optimizing-window-resize.html (debouncing?)
