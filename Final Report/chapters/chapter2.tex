@@ -9,14 +9,15 @@ All of the code developed for this project has been managed by git and pushed to
 \end{center}
 
 The history will show the various stages of this project and how we started off with a blank workspace and ended up with this product now.
-\linebreak
+
 When implementing the online features, the commit messages became less detailed because the changes were extremely minor (usually one line or printing variables to the console) and changes were being made rapidly for debugging. This was required because the tools that we have used to deploy the app require the changes to be committed in order to come into effect. This differs from the earlier commits where the solution could first be tested locally and then committed only when the changes were implemeted correctly.
 
-During this time, a new branch was created in order to isolate the changes, and ensure that there was a stable version of the app as a backup. Since then, the online version has been tested (more details in Chapter 3) and now works, so the main branch has now been pulled into this branch and the old one has since been deleted. A lot of the changes from this pull request actually happen outside of git itself. This includes setting up a server for the web app as well as configuring a service to host the websocket server. This configuration did include two new files that can be seen in the pull request, which is the Procfile as well as a requirements.txt file, which were necessary to make the websocket server work. Finally, the last major change was made to the server (main.py file) and this was so the backend could function correctly with the websocker server provider. However it should be noted that this change does not overwrite the offline version of the program, which can still be accessed by running the server on a user's devive (other users who wish to join must be on the same network due to the unsecure communication, more on that later).
+% This part might not be necessary
+% During this time, a new branch was created in order to isolate the changes, and ensure that there was a stable version of the app as a backup. Since then, the online version has been tested (more details in Chapter 3) and now works, so a pull request was made and now the online is a part of the stable build. A lot of the changes from this pull request actually happen outside of git itself. This includes setting up a server for the web app as well as configuring a service to host the websocket server. This configuration did include two new files that can be seen in the pull request, which is the Procfile as well as a requirements.txt file, which were necessary to make the websocket server work. Finally, the last major change was made to the server (main.py file) and this was so the backend could function correctly with the websocker server provider. However it should be noted that this change does not overwrite the offline version of the program, which can still be accessed by running the server on a user's devive (other users who wish to join must be on the same network due to the unsecure communication, more on that later).
 
 \section{Back End}
 
-The back end of a web app is often refererred to as the "brains" of a website/webapp. This part is responsible for all of the computation, storing of information and is where the server resides. The complement of this is the front end, which receives information from the server and displays the results in a way that is visually pleasing to the end user. These two components are tied together by some form of communication, and there are multiple ways this can be achieved.
+The back end of a web app is often refererred to as the "brains" of the whole operation. This part is responsible for all of the computation, storing of information and is where the server resides. The complement of this is the front end, which receives information from the server and displays the results in a way that is visually pleasing to the end user. These two components are tied together by some form of communication, and there are multiple ways this can be achieved.
 
 % Processing logic on server side to reduce computation on client side and also means there is a single point of truth
 
@@ -24,71 +25,75 @@ The decision for how to distribute computation between server and client can be 
 
 \subsection{Chess Logic}
 
-Mention transition from old chess engine to python-chess. The old version was going to be used when the project started off as machine learning but in the end it wasn't fully implemented so now we are using the built in chess module.
+% Mention transition from old chess engine to python-chess. The old version was going to be used when the project started off as machine learning but in the end it wasn't fully implemented so now we are using the built in chess module.
 
-Board is represented using FEN.
+\cite{SpriteSheet}
+In the early stages of this project, I was 
+
+% Board is represented using FEN.
 
 \subsection{Game Management}
 
-Storing a tuple of game state and connected users in a dictionary with join key\linebreak
-Generating join keys
+% Storing a tuple of game state and connected users in a dictionary with join key
+% Generating join keys
 
 \subsection{Python Server}
 
-Offline server, explain how to enact
+% Offline server, explain how to enact
 
 \subsection{Github Pages}
 
-Online server
+% Online server
 
 \section{Communication}
 
-Network speed - applicable to online version\linebreak
-Consider security\linebreak
-Bad join keys redirect users to home menu
+% Asynchronus
+% Network speed - applicable to online version
+% Consider security
+% Bad join keys redirect users to home menu
 
-Challenege with matching the backend board with the frontend representation: orientation of pieces vs canvas coordinates
+% Challenege with matching the backend board with the frontend representation: orientation of pieces vs canvas coordinates
 
 \subsection{Websockets}
-Code was adapted from https://websockets.readthedocs.io/en/stable/\linebreak
-Flawed with short life time and disconnect easily\linebreak
-Pro is that they use bidirectional channel, so polling is no longer required\linebreak
-Iphone will disconnect if locked/leaves safari (added cheap fix to allow reconnection but it's not special to the user, anyone can connect in their place)\linebreak
-Refreshing with one user would cause the game to be deleted because the server would temporarily see that there are no users in the game. And after the page refreshed the user wouldn't be able to join because the game is now deleted. Added a small buffer time to keep the game alive, to combat this.\linebreak
+% Code was adapted from https://websockets.readthedocs.io/en/stable/
+% Flawed with short life time and disconnect easily
+% Pro is that they use bidirectional channel, so polling is no longer required
+% Iphone will disconnect if locked/leaves safari (added cheap fix to allow reconnection but it's not special to the user, anyone can connect in their place)
+% Refreshing with one user would cause the game to be deleted because the server would temporarily see that there are no users in the game. And after the page refreshed the user wouldn't be able to join because the game is now deleted. Added a small buffer time to keep the game alive, to combat this.
 
-Closed after win because no more messages need to be exchanged.
+% Closed after win because no more messages need to be exchanged.
 
 \subsection{Heroku}
 
-Platform as a service (distirbuted systems?)
+% Platform as a service (distirbuted systems?)
 
-Server sleeps after a period of not being used. Causes next request to take a few seconds longer than usual
+% Server sleeps after a period of not being used. Causes next request to take a few seconds longer than usual
 
 
 \section{Front End}
 
-Important that the interface is graphical to make the softaware easier to adopt by others.
+% Important that the interface is graphical to make the softaware easier to adopt by others.
 
 \subsection{The Welcome Page}
 
-Option to start a new game\linebreak
-Alternatively you can enter a code and join an existing game
+% Option to start a new game
+% Alternatively you can enter a code and join an existing game
 
-Red message appears under user input if they entered an invalid code. Catches the eye and red subconsciously indicates error.
+% Red message appears under user input if they entered an invalid code. Catches the eye and red subconsciously indicates error.
 
 \subsection{The Chess Page}
 
-Nav bar to return to main menu\linebreak
-Text at the top to show join code and link\linebreak
-Also prompts on who's turn it is and whether user is in check or if the game has finished with the result.\linebreak
-board is drawn with canvas
+% Nav bar to return to main menu
+% Text at the top to show join code and link
+% Also prompts on who's turn it is and whether user is in check or if the game has finished with the result.
+% board is drawn with canvas
 
-reference sprite sheet\linebreak
-requires javascript\linebreak
-interaction through mouse click events : converts mouse position to row and column using modolos (check spelling) and integer division\linebreak
-only parts of the board that need updating are updated: only drawing pieces that have moved or been taken, more resource efficient than redrawing the whole board.
+% reference sprite sheet
+% requires javascript
+% interaction through mouse click events : converts mouse position to row and column using modolos (check spelling) and integer division
+% only parts of the board that need updating are updated: only drawing pieces that have moved or been taken, more resource efficient than redrawing the whole board.
 
 \subsection{Responsive Design}
 
-(CSS) Prioritises mobile devices and forces computers to adjust the layout. Computers typically have faster processors than mobile devices.\linebreak
-computer users can resize the window and the design adapts: https://web.archive.org/web/20220714020647/https://bencentra.com/code/2015/02/27/optimizing-window-resize.html (debouncing?)
+% (CSS) Prioritises mobile devices and forces computers to adjust the layout. Computers typically have faster processors than mobile devices.
+% computer users can resize the window and the design adapts: https://web.archive.org/web/20220714020647/https://bencentra.com/code/2015/02/27/optimizing-window-resize.html (debouncing?)
