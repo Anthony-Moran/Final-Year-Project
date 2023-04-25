@@ -5,10 +5,9 @@ let resize_timeout;
 function getWebSocketServer() {
     if (window.location.host === "anthony-moran.github.io") {
         return "wss://am-fyp.herokuapp.com/";
-    } else if (window.location.host === "192.168.0.12:8000") {
-        return "ws://192.168.0.12:8001/";
     } else {
-        throw new Error(`Unsupported host: ${window.location.host}`);
+        const host = window.location.host.split(":")[0];
+        return `ws://${host}:8001`;
     }
 }
 
