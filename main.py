@@ -323,7 +323,7 @@ async def join(websocket, join_key, reconnecting):
         board.am_active_players.remove(player)
         if len(connected) == 0:
             # Add a delay here in case a user is refreshing the page, instead of deleting the game immediately
-            await asyncio.sleep(5)
+            await asyncio.sleep(120)
             if len(connected) == 0:
                 del Boards[join_key]
 
