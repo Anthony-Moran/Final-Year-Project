@@ -169,9 +169,10 @@ async def play(websocket, board: chess.Board, player, connected):
 
                 websockets.broadcast(connected, json.dumps({
                     "type": "play",
-                    "start square": (old_castle_square_index, castle_symbol),
+                    "start square": old_castle_square_index,
                     "end square": new_castle_square_index,
-                    "piece": castle_symbol
+                    "piece": castle_symbol,
+                    "contribute turn": False
                 }))
 
             elif (board.is_en_passant(move)):

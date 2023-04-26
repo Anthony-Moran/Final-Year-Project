@@ -405,14 +405,16 @@ export function attempting_move(move) {
     return current_moves.map(move => move[0]).find(available_move => JSON.stringify(available_move) == JSON.stringify(move)) != undefined
 }
 
-export function play(start_square, end_square, char, check) {
+export function play(start_square, end_square, char, check, contribute_turn=true) {
     unselect();
     unhighlight_available_moves();
 
     draw_square(start_square);
     draw_square(end_square);
     draw_piece_from_char(end_square, char);
-    update_turn(!turn, check);
+    if (contribute_turn) {
+        update_turn(!turn, check);
+    }
 }
 
 export function win(winner) {

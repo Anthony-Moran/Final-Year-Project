@@ -95,7 +95,7 @@ function receiveHandler(websocket) {
                 game.select([event.square, event.piece], event["available moves"]);
                 break;
             case "play":
-                game.play(event["start square"], event["end square"], event.piece, event.check);
+                game.play(event["start square"], event["end square"], event.piece, event.check, event["contribute turn"]);
                 break;
             case "player joined":
                 game.player_joined(event.full, event.board);
