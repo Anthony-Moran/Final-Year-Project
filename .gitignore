@@ -8,3 +8,4 @@ Final Report/*.txt
 /code/.idea
 *.pyc
 ~$hicsUserTesting.doc
+*.blg

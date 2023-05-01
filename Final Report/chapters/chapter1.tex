@@ -1,43 +1,125 @@
 \chapter{Introduction and Background Research}
 
-% You can cite chapters by using '\ref{chapter1}', where the label must
-% match that given in the 'label' command, as on the next line.
 \label{chapter1}
 
-% Sections and sub-sections can be declared using \section and \subsection.
-% There is also a \subsubsection, but consider carefully if you really need
-% so many layers of section structure.
-
-% basic knowledge of chess is not necessary but would be helpful.
+Knowledge of chess is not necessary to understanding this report. Despite chess being the forefront of this project, we will soon see that there is a lot more involved when building an online application other than the game itself. Throughout the report, any complex rules of the game will be explained to the degree in which is necessary to understand the current context.
 
 \section{Introduction}
+\label{sec:Introduction}
 
-Chess is a board game that has existed since the 7th century \cite{AHistoryOfChess}. The game is played by two people, each one in control of an army of equal strength; it is up to the player's logical reasoning and deduction in order to conquer the board. For a long time, chess could only be played in person, or perhaps through the post. Internet Chess Club was founded by Danny Sleator in 1992 \cite{InternetChessClub}, and he lead a small team of programmers to develop the first dedicated chess server. This was the introduction to playing chess over the internet and it allowed people to play chess together, regardless of the distance between them. It wasn't until 1995, where the first web based chess server was launched by Caissa \cite{Caissa}, which featured a graphical user interface. This most likely contributed to a higher adoption of playing chess online because it gave users a friendlier interface, which was more intuitive and approachable than what was previously available. Since then, many similar services have been created such as <list examples> and it goes to show that there is quite some variety in the way this service is implemented.
+Chess is a board game that has existed since the 7th century \cite{HistoryOfChess} however it doesn't look exactly as we know it today. The modern game is played by two people, each one in control of an army of equal strength; it is up to the player's logical reasoning and deduction to conquer the board. For a long time, chess could only be played in person, or perhaps through the post. Internet Chess Club was founded by Danny Sleator in 1992 \cite{InternetChessClub}, and he lead a small team of programmers to develop the first dedicated chess server. This was the introduction to playing chess over the internet and it allowed people to play chess together, regardless of the distance between them. It wasn't until 1995, where the first web based chess server was launched by Caissa \cite{CaissaAboutPage}, which featured a graphical user interface. This most likely contributed to a higher adoption of playing chess online because it gave users a friendlier interface, which was more intuitive and approachable than what was previously available. Since then, many similar services have been created such as Chess.com and Lichess and it goes to show that there is quite some variety in the way this service is implemented. This report will outline our attempt to develop a service of our own.
 
-% Must provide evidence of a literature review. Use sections
-% and subsections as they make sense for your project.
-\section{Literature review}
+It has only been in recent years that chess' popularity has started to rise, a big factor on this would be Netflix's "The Queen's Gambit", which released in October of 2020 \cite{TheQueensGambit}. We can see in figure \ref{ChessSearchTrend} that the popularity for chess spiked in November 2020, which would correlate to the release of the TV show. The timing of these events, would suggest that the Show's success reignited people's interest in the game as well as attracting new players. The figure also shows a gradual rise in popularity with chess to this day and reinforces the demand for chess software. Whilst this software already exists, we will soon see that different software offers different features and in general, competiton in the market always leads to innovation, which is beneficial to the end user.
 
-\section{Libraries and Tools}
+\begin{figure}
+    \begin{center}
+        \fbox{\includegraphics[width=0.75\textwidth]{ChessSearchTrend}}
+        \caption{\href{https://trends.google.com/trends/explore?date=all&geo=GB&q=chess}{Google Trends Graph} depicting the relative interest in the search term "chess"}
+        \label{ChessSearchTrend}
+    \end{center}
+\end{figure}
 
-\subsection{Python}
+\section{Objectives}
 
-Flask / Flask Restful\linebreak
-Keep brief because it is not in the final solution\linebreak
-Initially chosen due to comfortablility and experience\linebreak
-Used polling
+By the end of this project, we will have created a fully functional web app that allows two users to connect over the internet to play a game of chess together.
 
-python modules here
+On top of the functionality, we will also attempt to create a comfortable user experience, because the app will not be a success if no one knows how to interact with it.
 
-\subsection{Web Languages: HTML, CSS and Javascript}
+Although it is not a priority, the general asthetic of the app will be considered and we will try to design a front end that is visually pleasing.
 
-websockets
+% \section{Literature Review}
 
-\subsection{Github Pages}
+% % Communication on the web (websockets is separation of concerns for handling only chess related queries)
+% % Server options - in python as most experience (flaskRESTful, django, websockets, socketio)
+% % flask vs django https://hackr.io/blog/flask-vs-django
+% % Chess logic - something written in python so that it is compatible with server (python-chess seems appropriate, well tested and documented)
+% % Front End - dicuss web languages, like html, css and javascript, typescript
 
-\subsection{Heroku}
+% \subsection{Communication}
 
-\section{Background Experience}
+% \subsubsection{HTTP(S)}
 
-Distributed Systems' - Webservice coursework and how it assisted in developing a web app
-building for system vs building for user
+% \subsubsection{Websockets}
+
+% % https://www.rfc-editor.org/rfc/rfc6455.html
+% % https://pdf.sciencedirectassets.com/314898/1-s2.0-S1474667015X60617/1-s2.0-S1474667015343688/main.pdf?X-Amz-Security-Token=IQoJb3JpZ2luX2VjEIb%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FwEaCXVzLWVhc3QtMSJHMEUCIDyQG10uc5Reg2WVocpSi1%2F0oJ8P%2BQuMRFnyWVMxfIPVAiEAwGb%2FPqJDCaTZs6Rt61RQv%2FvLZyuHK8muYxTDke2q8F4qvAUIj%2F%2F%2F%2F%2F%2F%2F%2F%2F%2F%2FARAFGgwwNTkwMDM1NDY4NjUiDLyS0b094lTvDFNaICqQBVtYwRlORxiDJHyEk2pxp5dG%2B0OPewVRULEgaCBly2U65aOclEFGV2i2KqwvklCDzTdGHLLasqWKvieTVHt4Ys6Mit9QDPsHZsgcTYUFp%2FKMiOEKhS4xFJOrCEMMPgmYgObWPAbC4yZ9%2Bp%2BOg%2Bf8E3G6drrD0wmzaEw3Abauq%2Bnhg6Or4%2BCOZGQONx4JD6%2Fwv0Y%2FjPEQMS6%2F8nr%2Br9fteX0EA0Zy1GBVHPyYxY%2BLgcveMpM0ZJBOjKyTC%2FPG%2B1isjrNk6VwyOksrRldRq4cVHlixVKulLatBk5S5KP3%2F2fdhKugqfk2WxALuK4%2FZ71EOrfG4EmgOthXNVjIGROYF9q7WvryVzWuA376wSP%2B%2B0%2FJkM%2FpwtDIikScJeOxEUKLcvjq5Yh7NJD%2F%2Fw%2FqpuBMjCBYMrKB8YBqFct%2FZ%2Bx1Gf2zwWe6ponovZ%2B656UwFPKWmUb3p5ZdLafv%2BJOueS6TENKel8pT%2B7YwwS7RlUrvthkKjMbg736BqVfp6s11h4Qz5bN4VZ6xMqI88BPkVowwA44VZXYGfG4E9rU%2FhOrQEWKI5v7xCl10V8588EQECDZZPYYaSPHrkJf8F7%2FvEPz0rVQQd2jIpZ59J9C7v7tkAdk4tMRGsZab%2FA2mCF1au%2FN1afxyhir9pKa7Euh95T8sXHUwVsh%2B7wuU5UEFo2y7q9SFsVnA29kit1a5%2B%2FKKW5zk0oMuqvwHSzRlsmxP00rUTVLV6lMitdLcKdEhTiGm3U4BA7Y3dftJSb%2FHxHxfWK6z5JM0ZktUUE4kFSSjLVPNDWaPDsy5in6CuOneFxU1EZ1w2SHrh41aRXA7fu4r%2FnoCsuPR8M8H%2FowND%2BMya4cFVxowaySX8v8hapF8Sn4%2FEJcrKMMnhuaIGOrEB%2BA7A%2BM0dYJPRirxcqAjLv5bB8FZUEE0QEpn4Im%2FYLRX7AYec%2FcBm75V9cQmYEoiDtFVxx6VJLVszoUxXESeIo6QN2vehrYv7B9eNkSBAD82g1lp3qy%2B8QqJ9o%2FprCF3x3cpMfe2wpKEhPjvm%2F5vPt1OsA7aLDEBchPxkkWbHK2DVm3hqRziwYFaXVr6ApiGkw8hJlfI6EpORhHS%2FfCl%2FHAwYy76o7TCPC1JpBGOxnL%2Fg&X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Date=20230430T141047Z&X-Amz-SignedHeaders=host&X-Amz-Expires=300&X-Amz-Credential=ASIAQ3PHCVTY6TPVU2D7%2F20230430%2Fus-east-1%2Fs3%2Faws4_request&X-Amz-Signature=867aa3504d541ea0be5b117585d513b3efa012a6bde1ae920017feb836232cdb&hash=c0ff65239d95704140c8475673c0cfc50737c06b23487ca0b77e8363bf2d93bb&host=68042c943591013ac2b2430a89b270f6af2c76d8dfd086a07176afe7c76c2c61&pii=S1474667015343688&tid=spdf-1850f59c-e895-4239-bba4-637f80234daa&sid=be4b917e7f57844ad359602057a3dc610216gxrqa&type=client&tsoh=d3d3LnNjaWVuY2VkaXJlY3QuY29t&ua=1d0456055451570a0150&rr=7c005ec40e6971f2&cc=gb
+
+% % Requires http to initiate handshake
+
+% \subsubsection{Socket.IO}
+
+\section{Existing Solutions}
+
+\subsection{Caissa}
+\label{Caissa}
+
+As mentioned in section \ref{sec:Introduction}, \href{https://caissa.com}{Caissa} is the first \emph{web based} chess server. The website is named after Caissa, the "patron goddess of chess players" \cite{WhoIsCaissa}. 
+
+Being accessible from the web allows for people to play chess with each other regardless of the distance between them. Caissa uses http (hypertext transfer protocol) for its communication \cite{CaissaAboutPage}, to put this into context, http was only developed by 1991 \cite{HTTP}. Caissa adopted this protocol while it was in its infancy and took a risk to use this over the standard telnet connection of the time.
+
+\cite{CaissaHomePage} Games can either be played in real time or otherwise. The latter is referred to as a \emph{Correspondence Game} and it allows users to play even if they are not online at the same time. Each person can log in and if it is their turn, they can make a move. Users can befriend the users they play against and this can be used to initiate games with them in the future with ease. Alternatively, if the user wants to play a game and no one is available, they can play against a computer instead, with varying difficulties (measure by elo; elo is a metric used to measure someone's relative skill in chess). There is also an additional computer type, listed as "Coaches", who have fixed elos and are helpful to users who are interested in practicing chess at their own level.
+
+Caissa supports chess as we know it, but it also provides two alternate versions, namely Chess960 and Apollo Chess. In chess 960, the position of pieces is randomised and both sides of the board are mirrored to keep everything fair. The rules of castling change because the king and rooks are not in their standard positions, otherwise the rules are the same. The latter, being Apollo Chess plays like a normal game with the exception that forces pawns to only move one space; the standard rules allow pawns to move 2 spaces on their first move, which is removed from Apollo Chess. This version disrupts the opening theory for the game and can be a refreshing experience for those who have a lot of experience with the game. As a side note, there does not appear to be much information about this variation of chess outside of Caissa, and it must be unique to them.
+
+By starting a new game and looking into the developer tools, we can see that the DOM (document object model) contains a canvas element, it is used as an overlay to draw circles and arrows, most presumably to help players plan their moves. We can look at the event listeners for the page and see that a mouse click is converted into a row and column by dividing the event's offset x and y values by the size of the squares as seen in figure \ref{CaissaMouseToSquare}. The website uses a separate javascript file to handle the chess logic, which is a good example of "separation of concerns", where each file has a dedicated task.
+
+\begin{figure}[h]
+    \begin{center}
+        \begin{lstlisting}
+            let fn = parseInt(e.offsetX / squaresize),
+            rn = 7 - parseInt(e.offsetY / squaresize),
+            x,
+            y;
+        \end{lstlisting}
+        \caption{Extracted from the source code in \cite{CaissaCode} within the second script tag in the "released" function. "fn" referring to the file (column) on the board, and "rn" for the rank (row).}
+        \label{CaissaMouseToSquare}
+    \end{center}
+\end{figure}
+
+\subsection{Chess.com}
+
+% Stockfish game analysis
+
+\cite{Chess.com} Chess.com was released in 2005, which is 10 years after Caissa was released. This website is by far the most popular chess site in the world, hosting over 10 million chess games per day.This popularity must have come about for a reason, so we will investigate the way chess.com has been made to make it so successful.
+
+Chess.com shares most of the same features as Caissa (except apollo chess). It builds on top of these features, including its chess variants, which there is a countless number of. These changes can be subtle like 3-Check chess where you must check the opponent's king 3 times to win or completely shake things up like Horde where one player starts off with four and a half rows of pawns \cite{Chess.comVariants}. Another variant, which has its own category is 4 player chess, as well as its own variants. As the name suggests, 4 people can play these variants at a time and is a fun way to play the game.
+
+After attempting to look under the hood of the website in the DOM, and following the click event, it appear that the files have been minified. This is a process to reduce the size of files by removing comments, white space and condensing variable names to be small (sometimes only one character). This process is done to reduce the amount of bandwidth required to send the data. Bandwidth is a measure of how much data can be sent at a time, for example 80Mbps or 80 megabits per second. Minified files contain the exact same functionality as the original version but contain less data and can be sent faster as a result. The issue for us is that these files are not human friendly to read due to the optimisations in size. The functionality of the site is hidden so we cannot analyse it, unlike with Caissa.
+
+\cite{Chess.comTiers} Something unique to this chess website is that it offers subscriptions to unlock more features. The most notable upgrades include removing the restriction to already accessible features like puzzles, which initially allow for 3 games a day. The subscriptions are split into 3 tiers and offer more features, the more expensive the subscription becomes. The higher tiers offer features that will help aspiring chess players become better at the game, by offering reviews of games they have just played as well as insights to help them improve next time.
+
+In general, Chess.com offers many educational resources to support its player become better at the game (some of these locked behind paywalls) as listed here: \url{https://www.chess.com/learn}. Once a user has become more confident with the game they can start participating in tournaments, which are also hosted on the platform. With addition of the news and social sections of the site, chess.com manages to achieve its goals \cite{Chess.com} of creating a close-knit community.
+
+\subsection{Lichess}
+
+\cite{Lichess} Our final example is \href{https://lichess.org}{Lichess}. This site was released in 2010, making it the most recent out of the examples we are analysing. The website is open source, which means the source code can be viewed by anyone and contributions can be made (after being reviewed) to fix bugs or add new features. It is also completely free to use; it does not display ads or lock features behing subscriptions. Due to this commitment to remain free and a lack of ads, Lichess relies on crowdfunding to finance its development. While hosting 5 million game daily, Lichess certainly attracts a crowd, and potential supporters.
+
+With the number of features included, this comes as no surprise. Although it is not as expansive as Chess.com, Lichess has 8 other variants of chess (including chess960, as mentioned in section \ref{Caissa}). There is also an option to learn with step by step tutorials and puzzles, that will help beginners and intermediate players learn to play and develop better strategies. As with Chess.com, for those wanting more of a challenge, Lichess also offers the ability to create and partake in tournaments. Finally the website also has a section dedicated to community, much like Chess.com, where people can chat and ask questions. It's amazing that this website offers almost as much as Chess.com but can offer it all for free.
+
+The one feature Chess.com surpasses Lichess on, would have to the game review and analysis. When a game is finished in Lichess, we can have the website generate an analysis of the game and it will point out moves in 4 categories: neutral, inaccuracy, mistake and blunder. Each category would translate to an increasingly worse move from the last. Chess.com expands from this to also include textbook moves during the start of the game that are well documented and understood by the community and then it also reinforces postive move by stating how good they were from a scale of good to brilliant. The disadvantage to this however is that Chess.com only allows one game to be reviewed per day, where as Lichess' more limited review can be used an unlimited number of times.
+
+When starting a new game, we can look under the sources tab, as seen in figure \ref{LichessWebsocketsExample}, and see that the website uses websockets to communicate moves between the server and client. Whilst websockets made an appearance in chess.com's source files, they did not seem to be used for sending data for movements or any important data at all, it would send a number and receive a number at approximately 7 second intervals.
+
+\begin{figure}
+    \begin{center}
+        \includegraphics[width=1\textwidth]{LichessWebsocketsExample}
+        \caption{Viewing the sources tab in the developers tool during a game}
+        \label{LichessWebsocketsExample}
+    \end{center}
+\end{figure}
+
+\section{Stockfish}
+
+In the previous two sections, we have mentioned game review/analysis but how do these websites know what a good and bad move is? This functionality is outsourced to an external engine named Stockfish. \cite{Stockfish} Originating from the Glaurung engine, Stockfish was forked from the codebase in 2008 and as of October 2020, become the "highest-rated chess engine according to CCRL (computer chess rating list)" \cite{Chess.comStockfish}. As of writing, Stockfish version 15 has an elo of 3535 \cite{StockfishElo}, and the highest elo for a human is held by Magnus Carlsen, with an elo of 2853 \cite{MagnusElo}. This goes to show that the engine is much further ahead than any human and that its judgement should be trusted when it is being used for a game review. However we wouldn't be doing Stockfish justice if we didn't also mention that it doesn't only out perform humans but also other engines! In Season 23 of the TCEC (Top Chess Engine Championship), Stockfish has come out on top \cite{TCECS23SuperFinal} and also for the other 5 seasons before this! It is no wonder that chess software chooses to implement Stockfish as their engine of choice. In addition to the fact that it is open source and free, it is the obvious choice for those who develop chess software.
+
+\section{Background Experience From The Author}
+
+In the past I, the author, have designed two web services, called DS Club (Distributed Systems Club) and Monster Maker. The first service is a social media service that manipulates a database and can store posts, which can be requested, edited and deleted. Posts have an associated user, can include a caption and images and can also disable replies from other users. The second service, also uses a database to store monster designs. Similar to the first service, they can be requested using their unique IDs as well as being edited or deleted. The monsters could be created by customising the colour, facial expression and the type of hat they were wearing, an example of which can be seen in figure \ref{MonsterExample} (a happy, blue monster with a pirate hat). The two web services were composed with twitter to create a larger system and it requires the services to communicate with each other. This is where we reach the difference between this system and the app that is discussed in this report; services that communicate with each other and an application that communicates with a user. The web services could be accessed in a terminal or command line using the curl command, however this is not accessible to users that are not familiar with programming and this is why a user interface is important for the app we are creating. The back end will function very similarly to the services previously described.
+
+\begin{figure}[h]
+    \begin{center}
+        \includegraphics[width=1\textwidth]{MonsterExample}
+        \caption{A Twitter post that has been shared from DS Club, and an attached image, generated by Monster Maker}
+        \label{MonsterExample}
+    \end{center}
+\end{figure}

@@ -1,0 +1,110 @@
+\begin{thebibliography}{10}
+
+\bibitem{InternetChessClub}
+\url{https://www.chessclub.com/sitehelp/about}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{CaissaAboutPage}
+\url{https://caissa.com/about.html}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{TheQueensGambit}
+\url{https://www.rottentomatoes.com/tv/the_queens_gambit}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{WhoIsCaissa}
+\url{https://caissa.com/whois.html}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{HTTP}
+\url{https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/Evolution_of_HTTP#}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{CaissaHomePage}
+\url{https://caissa.com}.
+\newblock (Accessed on 28/04/2023).
+
+\bibitem{CaissaCode}
+\url{https://caissa.com/learn/_train}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{Chess.com}
+\url{https://www.chess.com/about}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{Chess.comVariants}
+\url{https://www.chess.com/variants}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{Chess.comTiers}
+\url{https://www.chess.com/membership?c=navbar}.
+
+\bibitem{Lichess}
+\url{https://lichess.org/about}.
+\newblock (Accessed on 27/04/2023).
+
+\bibitem{Stockfish}
+\url{https://stockfishchess.org/about/}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{Chess.comStockfish}
+\url{https://stockfishchess.org/about/}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{StockfishElo}
+\url{https://computerchess.org.uk/ccrl/4040/index.html}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{MagnusElo}
+\url{https://ratings.fide.com/top.phtml?list=men}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{EnPassant}
+\url{https://handbook.fide.com/chapter/E012018}.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{Websockets}
+\url{https://websockets.readthedocs.io/en/stable/}.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{CompleteCode}
+\url{https://websockets.readthedocs.io/en/stable/intro/tutorial3.html}.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{NoHost}
+\url{https://docs.python.org/3/library/asyncio-eventloop.html#asyncio.loop.create_server}.
+\newblock (Accessed on 26/04/2023).
+
+\bibitem{Broadcast}
+\url{https://websockets.readthedocs.io/en/stable/intro/tutorial2.html#broadcast}.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{Debouncing}
+\url{https://web.archive.org/web/20220714020647/https://bencentra.com/code/2015/02/27/optimizing-window-resize.html}.
+\newblock (Accessed on 26/04/2023).
+
+\bibitem{PGNStandard}
+S.~J. Edwards.
+\newblock {PGN Standard}.
+\newblock \url{https://archive.org/details/pgn-standard-1994-03-12}, 1994.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{SpriteSheet}
+jurgenwesterhof.
+\newblock {File:Chess Pieces Sprite.svg}.
+\newblock \url{https://commons.wikimedia.org/wiki/Template:SVG_chess_pieces},
+  2014.
+\newblock (Accessed on 25/04/2023).
+
+\bibitem{TCECS23SuperFinal}
+S.~M.
+\newblock Tcec season 23 superfinal: Leela chess zero vs stockfish.
+\newblock \url{https://tcec-chess.com/articles/Sufi_23_-_Sadler.pdf}.
+\newblock (Accessed on 30/04/2023).
+
+\bibitem{HistoryOfChess}
+M.~H.~J. R.
+\newblock {\em A History Of Chess}.
+\newblock Clarendon Press, Oxford, 1913.
+
+\end{thebibliography}
