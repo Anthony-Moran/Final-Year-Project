@@ -274,6 +274,8 @@ function draw_square(index, colour=null, alpha=SELECT_ALPHA) {
         draw_square(index);
         ctx.fillStyle = colour+alpha;
     }
+    console.log(ctx.fillStyle);
+    console.log(x, y);
     ctx.fillRect(x, y, square_size, square_size);
 
     draw_square_name(index);
@@ -303,6 +305,7 @@ function draw_piece(index, piece) {
     const [dx, dy] = get_xy_from_index(index);
     const [sx, sy, sw, sh] = get_source_rect(piece);
 
+    console.log("drawing piece", piece, "at index", index)
     ctx.drawImage(chess_spritesheet, sx, sy, sw, sh,
         dx, dy, square_size, square_size);
 }
@@ -365,7 +368,7 @@ function draw_board(fen) {
 
 
 export function clear(index) {
-    console.log("clear")
+    console.log("clear");
     draw_square(index);
 }
 
@@ -549,17 +552,24 @@ function update_last_move(given_last_move) {
     }
 
     const [start, end, piece] = actual_last_move;
-
-    if (given_last_move != undefined && last_move != undefined) {
-        const [start, end, piece] = last_move;
-        draw_square(start);
-        draw_square(end);
-        draw_piece_from_char(end, piece);
-    }
+    remove_last_move(given_last_move);
 
     draw_square(start, COLOUR_LAST_MOVE, LAST_MOVE_ALPHA);
     draw_square(end, COLOUR_LAST_MOVE, LAST_MOVE_ALPHA);
     draw_piece_from_char(end, piece);
 
     last_move = actual_last_move;
+}
+
+function remove_last_move(given_last_move) {
+    if (given_last_move == undefined || last_move == undefined) {
+        return;
+    }
+
+    const [start, end, piece] = last_move;
+    draw_square(start);
+    draw_square(end);
+    draw_piece_from_char(end, piece);
+
+    last_move = null;
 }

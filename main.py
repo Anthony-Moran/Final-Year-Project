@@ -167,6 +167,8 @@ async def play(websocket, board: chess.Board, player, connected):
             }))
 
         if event["type"] == "play":
+            send_en_passant = False
+
             move = chess.Move(event["start square"], event["end square"])
             piece = get_piece_from_square(board, event["start square"])
             end_piece = piece
@@ -194,7 +196,6 @@ async def play(websocket, board: chess.Board, player, connected):
                 }))
 
             elif (board.is_en_passant(move)):
-                print("move is en passant")
                 attacking_file, attacking_rank = move.uci()[2:4]
                 defending_file = attacking_file
                 defending_rank = "4" if attacking_rank == "3" else "5"
@@ -202,10 +203,11 @@ async def play(websocket, board: chess.Board, player, connected):
                 defending_uci = defending_file+defending_rank
                 defending_square_index = chess.parse_square(defending_uci)
 
-                websockets.broadcast(connected, json.dumps({
+                send_en_passant = True
+                en_passant_message = json.dumps({
                     "type": "clear",
                     "piece": defending_square_index
-                }))
+                })
 
             elif (piece.lower() == "p" and (int(new_piece_rank) == 1 or int(new_piece_rank) == 8)):
                 await websocket.send(json.dumps({
@@ -226,6 +228,9 @@ async def play(websocket, board: chess.Board, player, connected):
                 "piece": end_piece,
                 "check": board.is_check()
             }))
+
+            if send_en_passant:
+                websockets.broadcast(connected, en_passant_message)
 
             # End game conditions
             # Can be generalised to:
