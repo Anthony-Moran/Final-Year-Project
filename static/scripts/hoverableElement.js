@@ -7,6 +7,7 @@ function hide_prompt(prompt) {
     prompt.style.display = "none";
 }
 
+const HIDE_TIME = 5000;
 
 export function make_hoverable(element, prompt) {
     element.am_mouseenter = event => {
@@ -15,7 +16,7 @@ export function make_hoverable(element, prompt) {
         element.prompt = prompt;
         element.timeoutHide = setTimeout(() => {
             hide_prompt(prompt);
-        }, 3000);
+        }, HIDE_TIME);
     }
 
     element.am_mousemove = event => {
@@ -24,7 +25,7 @@ export function make_hoverable(element, prompt) {
             clearTimeout(element.timeoutHide);
             element.timeoutHide = setTimeout(() => {
                 hide_prompt(prompt);
-            }, 3000);
+            }, HIDE_TIME);
         }
     }
 
