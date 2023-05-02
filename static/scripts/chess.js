@@ -193,7 +193,6 @@ function alertBrokenConnection() {
 
 function close_websocket(websocket) {
     websocket.removeEventListener("close", alertBrokenConnection);
-    console.log("closing websocket without triggering other event")
     websocket.close()
 }
 
