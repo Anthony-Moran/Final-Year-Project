@@ -101,6 +101,9 @@ function receiveHandler(websocket) {
             case "init":
                 game.init(event.board, event.player, event["last move"], event.turn, event.join,
                     event.check, event.finished, event["finished reason"], event.winner);
+                if (event["finished"]) {
+                    close_websocket(websocket);
+                }
                 break;
             case "hover":
                 game.highlight_available_moves(event["available moves"], true);

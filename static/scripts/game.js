@@ -275,7 +275,6 @@ function draw_square(index, colour=null, alpha=SELECT_ALPHA) {
         ctx.fillStyle = colour+alpha;
     }
     ctx.fillRect(x, y, square_size, square_size);
-    console.log("drawn square", index, x, y);
 
     draw_square_name(index);
 }
@@ -524,11 +523,8 @@ export function on_hover_square(callback) {
         if (index != hover_square_index) {
             unhighlight_available_moves();
             hover_square_index = index;
-        } else {
-            return;
+            callback(event);
         }
-
-        callback(event);
     })
 }
 

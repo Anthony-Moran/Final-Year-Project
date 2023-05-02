@@ -348,7 +348,7 @@ async def join(websocket, join_key, reconnecting):
         if len(connected) == 0:
             # Add a delay here in case a user is refreshing the page, instead of deleting the game immediately
             await asyncio.sleep(120)
-            if len(connected) == 0:
+            if len(connected) == 0 and join_key in Boards:
                 del Boards[join_key]
 
 async def handler(websocket):
