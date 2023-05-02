@@ -33,7 +33,6 @@ function fill() {
             const [dx, dy, dw, dh] = [col * CELL_SIZE + offset, row * CELL_SIZE + offset,
                                     CELL_SIZE, CELL_SIZE];
 
-            console.log(sx, sy, sw, sh, dx, dy, dw, dh);
             ctx.drawImage(spritesheet, sx, sy, sw, sh, dx, dy, dw, dh);
         }
     }

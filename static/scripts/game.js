@@ -274,8 +274,6 @@ function draw_square(index, colour=null, alpha=SELECT_ALPHA) {
         draw_square(index);
         ctx.fillStyle = colour+alpha;
     }
-    console.log(ctx.fillStyle);
-    console.log(x, y);
     ctx.fillRect(x, y, square_size, square_size);
 
     draw_square_name(index);
@@ -305,7 +303,6 @@ function draw_piece(index, piece) {
     const [dx, dy] = get_xy_from_index(index);
     const [sx, sy, sw, sh] = get_source_rect(piece);
 
-    console.log("drawing piece", piece, "at index", index)
     ctx.drawImage(chess_spritesheet, sx, sy, sw, sh,
         dx, dy, square_size, square_size);
 }
@@ -368,7 +365,6 @@ function draw_board(fen) {
 
 
 export function clear(index) {
-    console.log("clear");
     draw_square(index);
 }
 
