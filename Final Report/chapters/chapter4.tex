@@ -3,20 +3,28 @@
 
 \section{Objectives}
 
+Looking back at the work done in this report, it would seem as though we have met all of our objectives. For starters, it is possible for two people to play chess over the internet, from beginning to end. That is objectively true, and is further backed up by all the people who tested our app and said themselves that they were able to finish at least one game.
+
+Judging by the 88.9\% of users who were able to complete a game of chess, without any confusion, goes to show that the design of the app is clear and intuitive to use. For the minority who did find some difficulties, they have explained the events that caused the confusion and these issues have been resolved. The main confusion came down to a lack of understanding of the rules and a system has now been implemented that explains aspects of the game, when appropriate. Therefore everyone either understood how to use the app from the start or they were unsure at first but now should be able to navigate confidently with the additional support. Our second objective was that everyone could use our app comfortably, so this has clearly been met.
+
+Finally, the last objective was to have the design be visually pleasing. The majority of people did not suggest any improvements to the design and this would suggest that the design was already to an acceptable standard. The design was minimalistic, which is good for two reasons: it looks clean and it doesn't overwhelm the user. There were a few suggestions, all of which were implemented. Obviously design is subjective, so there is no clear indication of whether this objective was met. However, because the design choices came directly from the community and people of different backgrounds, it should be safe to assume that the design will apply to the vast majority. Although design can be overlooked, it is somewhat important in this day and age where a lot of products are judged based on a glance Therefore it is important that the design leaves an impression on the user, and hopefully leads them to come back again.
+
 \section{Features to be added in the future}
 \label{futureDevelopment}
-% Ability to resign
-% Show move history or allow pgn to be downloaded
-% Add ability to spectate
-% More options in the nav bar
-% Make sure no offensive game keys are generated
-% No script message
-% Certain features will be reserved for beginners only, like hints
-% Game variants
-% Ability to undo a move
-% Show move log and pieces taken during game
-% Timed games
-% Chat window
+
+It should be clear from chapter \ref{chapter1} that there is a lot of creativity involved when designing a chess website. A big feature that would really help this app grow, would be the ability to create accounts. By allowing users to register themselves, we can start assigning elos and use this to match users to others with similar skill. It would also solve a big problem, which is the communication between players. In its current state, if a user temporarily leaves the game, another user can take their place, so long as they know the url or game code. This is not ideal, but it cannot be avoided because there is no way of uniquely identifying a user; unless we implement account creation. This way, a game can be assigned both of the user IDs and only those users will be able to connect. If this was to be implemented, security would be an important aspect to consider because it will require handling user data, which must be kept safe from bad actors.
+
+Some things that should be changed, is to verify the automatically generated game keys do not contain any profanity. There are currently no checks for this.
+
+There should be a toggle that allows more experienced users to turn off the hints because they could become a burden for those who know all of the rules already. 
+
+There should also be an option to undo moves in more casual games (where both parties agree) and on the flip side, there could more competitive features like timers to add more pressure! In either case, the user should have the option to resign if they know they've lost ahead of time and want to be put out of their misery!
+
+During games, it would be nice to see a window that allows opponents to talk to each other, this would of course require moderation to ensure a healthy community can grow. It would also be helpful to players to have a full move log on the side during the game so they don't have to remember themselves. And at the end they should be able to download it as a pgn file if they want to share it or provide it to a chess engine to perform a game analysis on it. Alternatively, Stockfish could be integrated into the app so that users can do everything they need in one place.
+
+Chess variants are really fun to play and it could make a great addition to this app, it would also be something else to add in the nav bar, which is quite empty at the moment. Additional nav items could include tournaments, forum pages and countless other items inspired from popular chess websites.
+
+A very minor addition would require adding <noscript> tags, for users who do not have javascript enabled. This will make them aware that javascript is required to use the website.
 
 \section{Conclusion}
 \label{Conclusion}
@@ -24,5 +32,7 @@
 A demo has been recorded that demonstrates all of the features we've discussed throughout this report and can be accessed via this link:
 
 \begin{center}
-    \url{}
+    \url{https://youtu.be/UQDASu5nWlg}
 \end{center}
+
+Overall this app has achieved all of its objectives and has the potential to be built off of, with the suggestions given prior, and could become something amazing!
