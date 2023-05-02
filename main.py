@@ -75,6 +75,18 @@ def get_missing_player(board):
 def get_full(board):
     return len(board.am_active_players) == 2
 
+def get_last_move(board):
+    try:
+        last_move = board.peek()
+        piece = get_piece_from_square(board, last_move.to_square)
+        last_move = (last_move.from_square, last_move.to_square, piece)
+        return last_move
+    except IndexError:
+        last_move = None
+        return last_move
+    except Exception as e:
+        print(e)
+
 def generate_join_key():
     success = False
 
@@ -126,30 +138,36 @@ async def play(websocket, board: chess.Board, player, connected):
             websockets.broadcast(connected, json.dumps({
                 "type": "opponent disconnected",
                 "board": board.board_fen(),
-                "finished": get_finished(board)
+                "finished": get_finished(board),
+                "last move": get_last_move(board)
             }))
             break
         
         event = json.loads(message)
 
+        if event["type"] == "hover" and (player and not board.turn or not player and board.turn):
+                continue
+
         if event["type"] == "select" or event["type"] == "play":
             if event["player"] == chess.WHITE and not board.turn or\
             event["player"] == chess.BLACK and board.turn:
-                await error(websocket, "It is not your turn yet")
+                await websocket.send(json.dumps({
+                    "type": "notYourTurn"
+                }))
                 continue
 
-        if event["type"] == "select":
+        if event["type"] == "select" or event["type"] == "hover":
             available_moves = get_valid_moves_from(board, event["square"])
 
             await websocket.send(json.dumps({
-                "type": "select",
+                "type": event["type"],
                 "square": event["square"],
                 "piece": get_piece_from_square(board, event["square"]),
                 "available moves": available_moves
             }))
 
         if event["type"] == "play":
-            move = chess.Move(event["start square"], event["end square"]) # Will have to add edge case for promotion and castling and en pessant
+            move = chess.Move(event["start square"], event["end square"])
             piece = get_piece_from_square(board, event["start square"])
             end_piece = piece
             new_piece_rank = move.uci()[3]
@@ -176,6 +194,7 @@ async def play(websocket, board: chess.Board, player, connected):
                 }))
 
             elif (board.is_en_passant(move)):
+                print("move is en passant")
                 attacking_file, attacking_rank = move.uci()[2:4]
                 defending_file = attacking_file
                 defending_rank = "4" if attacking_rank == "3" else "5"
@@ -301,11 +320,14 @@ async def join(websocket, join_key, reconnecting):
                 "join": join_key
             }))
         else:
+            last_move = get_last_move(board)
+
             await websocket.send(json.dumps({
                 "type": "init",
                 "join": join_key,
                 "board": board.board_fen(),
                 "player": player,
+                "last move": last_move,
                 "turn": board.turn,
                 "check": board.is_check(),
                 "finished": get_finished(board),
@@ -315,7 +337,8 @@ async def join(websocket, join_key, reconnecting):
             websockets.broadcast(connected, json.dumps({
                 "type": "player joined",
                 "board": board.board_fen(),
-                "full": get_full(board)
+                "full": get_full(board),
+                "last move": get_last_move(board)
             }))
 
         await play(websocket, board, player, connected)

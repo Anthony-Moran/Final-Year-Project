@@ -1,3 +1,6 @@
+import { multi_launch } from "./confetti.js";
+import { make_hoverable, make_unhoverable } from "./hoverableElement.js";
+
 const ROWS_AND_COLS = 8;
 let square_size;
 
@@ -5,10 +8,16 @@ const canvas = document.querySelector("#ChessBoard");
 const ctx = canvas.getContext("2d");
 
 const prompt = document.querySelector("#Prompt");
+const turn_text = document.querySelector("#turn-text")
+const check_text = document.querySelector("#check-text");
 const join_text_element = document.querySelector("#join-text");
 const join_link_element = document.querySelector("#join-link");
 const join_code_element = document.querySelector("#join-code-text");
 join_text_element.style.display = "none"
+
+const check_definition_text_element = document.querySelector("#checkDefinitionText");
+const not_your_turn_text_element = document.querySelector("#notYourTurnText");
+make_hoverable(check_text, check_definition_text_element);
 
 const main = document.querySelector("main");
 const reconnect_link = document.querySelector("#reconnect-link");
@@ -37,9 +46,16 @@ const COLOUR0 = "#22aa44";
 const COLOUR1 = "#ffffff";
 const COLOUR_SELECT = "#ffff00";
 const COLOUR_HIGHLIGHT = "#33aaff";
+const COLOUR_LAST_MOVE = "#cc44cc";
+const SELECT_ALPHA = "dd";
+const HOVER_ALPHA = "99";
+const LAST_MOVE_ALPHA = "88";
 
 let current_selection = null;
 let current_moves = null;
+
+let hover_square_index = null;
+let last_move;
 
 let choosing_promotion = false;
 
@@ -65,7 +81,7 @@ export function pp_click(callback) {
     })
 }
 
-export function init(fen, given_player, given_turn, join_key, check, finished, finished_reason, winner) {
+export function init(fen, given_player, given_last_move, given_turn, join_key, check, finished, finished_reason, winner) {
     // This needs to go first because the presence of the link will affect the size of the canvas element
     if (!finished) {
         init_join_text(join_key);
@@ -83,10 +99,10 @@ export function init(fen, given_player, given_turn, join_key, check, finished, f
     frame_width = chess_spritesheet.width / spritesheet_cols;
     frame_height = chess_spritesheet.height / spritesheet_rows;
 
-    init_canvas(fen);
+    init_canvas(fen, given_last_move);
 }
 
-export function init_canvas(fen) {
+export function init_canvas(fen, given_last_move) {
     const container = canvas.parentElement;
     const min = Math.min(container.clientWidth, container.clientHeight);
     square_size = min / ROWS_AND_COLS;
@@ -122,6 +138,7 @@ export function init_canvas(fen) {
     })
 
     draw_board(fen);
+    update_last_move(given_last_move);
 }
 
 function init_join_text(join_key) {
@@ -134,21 +151,21 @@ function show_join_text_first() {
     join_text_element.style.display = "block";
 }
 
-export function show_join_text(fen) {
+export function show_join_text(fen, given_last_move) {
     show_join_text_first();
-    init_canvas(fen);
+    init_canvas(fen, given_last_move);
 }
 
-export function remove_join_text(fen) {
+export function remove_join_text(fen, given_last_move) {
     join_text_element.style.display = "none";
-    init_canvas(fen);
+    init_canvas(fen, given_last_move);
 }
 
-export function player_joined(full, fen) {
+export function player_joined(full, fen, given_last_move) {
     if (!full) {
         return;
     }
-    remove_join_text(fen)
+    remove_join_text(fen, given_last_move)
 }
 
 export function get_player() {
@@ -246,15 +263,19 @@ function get_colour_from_index(index) {
     return (row + col) % 2 == 0 ? COLOUR0 : COLOUR1;
 }
 
-function draw_square(index, colour=null) {
+function draw_square(index, colour=null, alpha=SELECT_ALPHA) {
     if (colour == null) {
         ctx.fillStyle = get_colour_from_index(index);
-    } else {
-        ctx.fillStyle = colour;
     }
 
     const [x, y] = get_xy_from_index(index);
+    if (colour != null && parseInt(alpha, 16) < 255) {
+        // This ensures that the transparent colour has a solid base to draw on top of.
+        draw_square(index);
+        ctx.fillStyle = colour+alpha;
+    }
     ctx.fillRect(x, y, square_size, square_size);
+    console.log("drawn square", index, x, y);
 
     draw_square_name(index);
 }
@@ -311,7 +332,7 @@ function draw_selection(selection, available_moves) {
     draw_piece_from_char(square, char);
 
     current_selection = selection;
-    highlight_available_moves(available_moves)
+    highlight_available_moves(available_moves);
 }
 
 function draw_board(fen) {
@@ -345,6 +366,7 @@ function draw_board(fen) {
 
 
 export function clear(index) {
+    console.log("clear")
     draw_square(index);
 }
 
@@ -353,6 +375,7 @@ export function select(selection, available_moves) {
 
     unselect();
     unhighlight_available_moves();
+    hover_square_index = null;
 
     if (JSON.stringify(old_selection) == JSON.stringify(selection)) {
         return;
@@ -372,10 +395,11 @@ function unselect() {
     current_selection = null;
 }
 
-function highlight_available_moves(available_moves) {
+export function highlight_available_moves(available_moves, hover=false) {
     available_moves.forEach(move => {
         const [square, char] = move;
-        draw_square(square, COLOUR_HIGHLIGHT);
+        const alpha = hover ? HOVER_ALPHA : SELECT_ALPHA;
+        draw_square(square, COLOUR_HIGHLIGHT, alpha);
         if (char != "") {
             draw_piece_from_char(square, char);
         }
@@ -395,6 +419,8 @@ function unhighlight_available_moves() {
         draw_piece_from_char(square, piece);
     });
     current_moves = null;
+
+    update_last_move();
 }
 
 export function attempting_move(move) {
@@ -415,10 +441,13 @@ export function play(start_square, end_square, char, check, contribute_turn=true
     if (contribute_turn) {
         update_turn(!turn, check);
     }
+
+    update_last_move([start_square, end_square, char])
 }
 
 export function win(winner) {
     display_winner(winner);
+    multi_launch();
 }
 
 export function draw(reason) {
@@ -446,9 +475,10 @@ function get_player_from_bool(bool) {
 function update_turn(given_turn, check) {
     turn = given_turn;
     const player_text = get_player_from_bool(turn);
-    const check_text = check ? " (In check)" : "";
-    const text = `${player_text}'s Turn${check_text}`;
-    prompt.innerHTML = `~ ${text} ~`;
+    const inner_check_text = check ? " (In check)" : "";
+    const text = `${player_text}'s Turn`;
+    turn_text.innerHTML = `~ ${text} ~`;
+    check_text.innerHTML = inner_check_text;
 }
 
 function display_winner(winner) {
@@ -461,12 +491,12 @@ function display_draw(reason) {
     prompt.innerHTML = `Draw (${reason})`;
 }
 
-export function opponent_disconnected(finished, board) {
+export function opponent_disconnected(finished, board, given_last_move) {
     if (finished) {
         return;
     }
 
-    show_join_text(board);
+    show_join_text(board, given_last_move);
 }
 
 export function reconnect(join_key) {
@@ -478,4 +508,62 @@ export function reconnect(join_key) {
 export function no_server() {
     prompt.style.display = "none";
     no_server_text.style.display = "block";
+}
+
+export function get_hover_square_index() {
+    return hover_square_index;
+}
+
+export function on_hover_square(callback) {
+    canvas.addEventListener("mousemove", event => {
+        if (choosing_promotion || current_selection != null) {
+            return;
+        }
+
+        const index = get_index_from_xy(event.offsetX, event.offsetY);
+        if (index != hover_square_index) {
+            unhighlight_available_moves();
+            hover_square_index = index;
+        } else {
+            return;
+        }
+
+        callback(event);
+    })
+}
+
+export function warn_not_your_turn() {
+    turn_text.classList.add("hint-anchor");
+    turn_text.classList.add("error");
+    make_hoverable(turn_text, not_your_turn_text_element);
+
+    setTimeout(unwarn_not_your_turn, 3000);
+}
+
+function unwarn_not_your_turn() {
+    turn_text.classList.remove("hint-anchor");
+    turn_text.classList.remove("error");
+    make_unhoverable(turn_text)
+}
+
+function update_last_move(given_last_move) {
+    const actual_last_move = given_last_move != undefined ? given_last_move : last_move;
+    if (actual_last_move == undefined) {
+        return;
+    }
+
+    const [start, end, piece] = actual_last_move;
+
+    if (given_last_move != undefined && last_move != undefined) {
+        const [start, end, piece] = last_move;
+        draw_square(start);
+        draw_square(end);
+        draw_piece_from_char(end, piece);
+    }
+
+    draw_square(start, COLOUR_LAST_MOVE, LAST_MOVE_ALPHA);
+    draw_square(end, COLOUR_LAST_MOVE, LAST_MOVE_ALPHA);
+    draw_piece_from_char(end, piece);
+
+    last_move = actual_last_move;
 }

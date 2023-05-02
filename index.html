@@ -6,9 +6,12 @@
     <title>AM Chess</title>
 
     <link rel="stylesheet" href="./static/styles/index.css">
+    <link rel="stylesheet" href="./static/styles/common.css">
 </head>
 <body>
     <a href="/"><h1>AM Chess</h1></a>
+    <p>Welcome to AM Chess, the place where you can play chess with friends online!</p>
+    <p>If you ever get stuck, hover over <span class="hint-anchor">text like this</span> to see hints and tips</p>
     <main>
         <div id="NewGameContainer">
             <p>Press the button to start a New Game!</p>
@@ -24,6 +27,10 @@
             <p id="not-existing-prompt">There is no game with that ID</p>
         </div>
     </main>
-    <script src="static/scripts/index.js"></script>
+    <img id="ImagePieces" src="./static/images/Chess_Pieces_Sprite.svg" style="display: none">
+    <script src="static/scripts/chessBackground.js"></script>
+    <script type="module" src="static/scripts/index.js"></script>
+
+    <p class="hint-text">Well done! Seems like you have the hang of it!</p>
 </body>
 </html>

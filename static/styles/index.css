@@ -3,12 +3,15 @@
 }
 
 body {
+    margin: 0;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100vw;
     height: var(--app-height);
+    background-color: #515151;
+    color: whitesmoke;
 }
 
 a {
@@ -17,7 +20,12 @@ a {
 
 h1 {
     margin-top: 30px;
-    color: black;
+    color: whitesmoke;
+}
+
+body > p {
+    padding: 0 20px;
+    text-align: center;
 }
 
 main {
@@ -54,13 +62,15 @@ main > div {
 
     margin: 20px;
     padding: 10px;
-    background-color: whitesmoke;
+    background-color: #626262;
     border-radius: 10px;
 
     text-align: center;
     width: 80%;
     max-height: 400px;
     flex: 1 1 0;
+
+    opacity: 1;
 }
 
 main > div > * {
@@ -99,4 +109,9 @@ button:hover {
     color: crimson;
     margin-top: 0;
     display: none;
+}
+
+.hint-anchor {
+    font-weight: bold;
+    color:rgb(191, 218, 241);
 }

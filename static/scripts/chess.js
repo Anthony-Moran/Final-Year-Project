@@ -1,6 +1,7 @@
 import * as game from "./game.js";
 
 let resize_timeout;
+const main = document.querySelector("main");
 
 function getWebSocketServer() {
     if (window.location.host === "anthony-moran.github.io") {
@@ -12,6 +13,8 @@ function getWebSocketServer() {
 }
 
 function init(websocket) {
+    set_background_target(main);
+
     websocket.addEventListener("open", () => {
         const params = new URLSearchParams(window.location.search);
         const event = {"type": "init"};
@@ -76,11 +79,19 @@ function sendHandler(websocket) {
         }))
     }, 250); 
     });
+
+    game.on_hover_square(() => {
+        websocket.send(JSON.stringify({
+            "type": "hover",
+            "square": game.get_hover_square_index()
+        }))
+    })
 }
 
 function receiveHandler(websocket) {
     websocket.addEventListener("message", ({data}) => {
         const event = JSON.parse(data);
+        console.log("received event", event)
         switch (event.type) {
             case "new":
                 close_websocket(websocket);
@@ -88,8 +99,11 @@ function receiveHandler(websocket) {
                 window.location.replace(event.url);
                 break;
             case "init":
-                game.init(event.board, event.player, event.turn, event.join,
+                game.init(event.board, event.player, event["last move"], event.turn, event.join,
                     event.check, event.finished, event["finished reason"], event.winner);
+                break;
+            case "hover":
+                game.highlight_available_moves(event["available moves"], true);
                 break;
             case "select":
                 game.select([event.square, event.piece], event["available moves"]);
@@ -98,7 +112,10 @@ function receiveHandler(websocket) {
                 game.play(event["start square"], event["end square"], event.piece, event.check, event["contribute turn"]);
                 break;
             case "player joined":
-                game.player_joined(event.full, event.board);
+                game.player_joined(event.full, event.board, event["last move"]);
+                break;
+            case "notYourTurn":
+                game.warn_not_your_turn();
                 break;
             case "win":
                 game.win(event.winner);
@@ -114,7 +131,7 @@ function receiveHandler(websocket) {
                 game.clear(event.piece);
                 break;
             case "opponent disconnected":
-                game.opponent_disconnected(event.finished, event.board);
+                game.opponent_disconnected(event.finished, event.board, event["last move"]);
                 break;
             case "reconnecting":
                 if (!event.success) {
